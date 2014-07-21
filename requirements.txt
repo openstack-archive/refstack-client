@@ -1,1 +1,1 @@
--e git+https://github.com/openstack/tempest.git
+-e git+https://github.com/openstack/tempest.git#egg=tempest
