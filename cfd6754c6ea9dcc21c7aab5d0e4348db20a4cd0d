@@ -1,0 +1,9 @@
+Verified+2: Jenkins
+Code-Review+2: David Lenwell <dlenwell@gmail.com>
+Code-Review+2: Forrest Carpenter <forrest@pistoncloud.com>
+Workflow+1: Forrest Carpenter <forrest@pistoncloud.com>
+Submitted-by: Jenkins
+Submitted-at: Mon, 28 Jul 2014 23:44:42 +0000
+Reviewed-on: https://review.openstack.org/108218
+Project: stackforge/refstack-client
+Branch: refs/heads/master
