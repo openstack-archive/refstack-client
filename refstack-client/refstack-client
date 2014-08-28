@@ -150,11 +150,13 @@ class RefstackClient:
 
             # Run the tempest script, specifying the conf file and the
             # flag telling it to not use a virtual environment.
-            cmd = (self.tempest_script, '-C', self.conf_file, '-N')
+            cmd = (self.tempest_script, '-C', self.conf_file, '-N', '-t')
 
             # Add the tempest test cases to test as arguments.
             if self.test_cases:
                 cmd += ('--', self.test_cases)
+            else:
+                cmd += ('--', "tempest.api")
 
             # If there were two verbose flags, show tempest results.
             if self.verbose > 1:
