@@ -1,0 +1,9 @@
+Verified+2: Jenkins
+Code-Review+2: David Lenwell <dlenwell@gmail.com>
+Workflow+1: David Lenwell <dlenwell@gmail.com>
+Code-Review+1: Sergey Slipushenko <sslypushenko@mirantis.com>
+Submitted-by: Jenkins
+Submitted-at: Thu, 04 Sep 2014 20:58:09 +0000
+Reviewed-on: https://review.openstack.org/117875
+Project: stackforge/refstack-client
+Branch: refs/heads/master
