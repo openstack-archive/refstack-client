@@ -1,0 +1,9 @@
+*.pyc
+.testrepository/
+.tox
+*.egg-info/
+*.egg
+.coverage
+cover/*
+.project
+.pydevproject
