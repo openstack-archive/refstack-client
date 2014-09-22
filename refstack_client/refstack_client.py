@@ -29,7 +29,6 @@ import ConfigParser
 import json
 import logging
 import os
-import requests
 import subprocess
 import time
 
@@ -39,7 +38,7 @@ from subunit_processor import SubunitProcessor
 
 
 class RefstackClient:
-    log_format = "%(asctime)s %(name)s %(levelname)s %(message)s"
+    log_format = "%(asctime)s %(name)s:%(lineno)d %(levelname)s %(message)s"
 
     def __init__(self, args):
         '''Prepare a tempest test against a cloud.'''
@@ -184,8 +183,8 @@ class RefstackClient:
             self.logger.error('%s failed to complete' % (e))
 
 
-if __name__ == '__main__':
-    ''' Generate tempest.conf from a tempest.conf.sample and then run test.'''
+def parse_cli_args(args=None):
+
     parser = argparse.ArgumentParser(description='Starts a tempest test',
                                      formatter_class=argparse.
                                      ArgumentDefaultsHelpFormatter)
@@ -224,8 +223,4 @@ if __name__ == '__main__':
                         type=str,
                         help='Specify a subset of test cases to run '
                              '(e.g. --test-cases tempest.api.compute).')
-
-    args = parser.parse_args()
-
-    test = RefstackClient(args)
-    test.run()
+    return parser.parse_args(args=args)
