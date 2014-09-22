@@ -1,0 +1,7 @@
+time: 2014-08-15 10:34:49.010492Z
+tags: worker-0
+test: refstack_client.tests.unit.tests.TestSequenceFunctions.test_run
+time: 2014-08-15 10:34:49.020584Z
+successful: refstack_client.tests.unit.tests.TestSequenceFunctions.test_run [ multipart
+]
+tags: -worker-0
