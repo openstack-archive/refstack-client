@@ -61,6 +61,7 @@ class RefstackClient:
         self.tempest_script = os.path.join(self.tempest_dir, 'run_tempest.sh')
         self.test_cases = args.test_cases
         self.verbose = args.verbose
+        self.offline = args.offline
 
         # Check that the config file exists.
         if not os.path.isfile(args.conf_file):
@@ -74,14 +75,13 @@ class RefstackClient:
         self.results_file = self._get_subunit_output_file()
         self.cpid = self._get_cpid_from_keystone()
 
-    def post_results(self):
+    def post_results(self, content):
         '''Post the combined results back to the server.'''
 
         # TODO(cdiep): Post results once the API is available as outlined here:
         # github.com/stackforge/refstack/blob/master/specs/approved/api-v1.md
 
-        json_content = self._form_json_content()
-        self.logger.debug('API request content: %s ' % json_content)
+        self.logger.debug('API request content: %s ' % content)
 
     def _get_subunit_output_file(self):
         '''This method reads from the next-stream file in the .testrepository
@@ -127,19 +127,19 @@ class RefstackClient:
             self.logger.error("Invalid Config File: %s" % e)
             exit(1)
 
-    def _form_json_content(self):
+    def _form_json_content(self, cpid, duration, results):
         '''This method will create the JSON content for the request.'''
-        subunit_processor = SubunitProcessor(self.results_file)
-        results = subunit_processor.process_stream()
-        self.logger.info("Number of passed tests: %d" % len(results))
-
         content = {}
-
-        content['cpid'] = self.cpid
-        content['duration_seconds'] = self.duration
+        content['cpid'] = cpid
+        content['duration_seconds'] = duration
         content['results'] = results
-
         return json.dumps(content)
+
+    def get_passed_tests(self, result_file):
+        '''Get just the tests IDs in a subunit file that passed Tempest.'''
+        subunit_processor = SubunitProcessor(result_file)
+        results = subunit_processor.process_stream()
+        return results
 
     def run(self):
         '''Execute tempest test against the cloud.'''
@@ -171,13 +171,20 @@ class RefstackClient:
 
             end_time = time.time()
             elapsed = end_time - start_time
-            self.duration = int(elapsed)
+            duration = int(elapsed)
 
             self.logger.info('Tempest test complete.')
             self.logger.info('Subunit results located in: %s' %
                              self.results_file)
 
-            self.post_results()
+            results = self.get_passed_tests(self.results_file)
+            self.logger.info("Number of passed tests: %d" % len(results))
+
+            # If the user did not specify the offline argument, then upload
+            # the results.
+            if not self.offline:
+                content = self._form_json_content(self.cpid, duration, results)
+                self.post_results(content)
 
         except subprocess.CalledProcessError as e:
             self.logger.error('%s failed to complete' % (e))
@@ -193,6 +200,11 @@ def parse_cli_args(args=None):
                         action='count',
                         help='Show verbose output. Note that -vv will show '
                              'Tempest test result output.')
+
+    parser.add_argument('--offline',
+                        action='store_true',
+                        help='Do not upload test results after running '
+                             'Tempest.')
 
     parser.add_argument('--url',
                         action='store',
