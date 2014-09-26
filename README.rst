@@ -23,8 +23,7 @@ $ sh ./setup_ubuntu_env.sh
 
 4. Execute test by typing:
 
-   refstack-client/refstack-client -c "Path of the tempest configuration file\
-   to use"
+   ./refstack-client -c "Path of the tempest configuration file to use"
 
    **Note:**
 
@@ -35,3 +34,4 @@ $ sh ./setup_ubuntu_env.sh
       (i.e. -t "tempest.api.identity.admin.test_roles").
    d. Adding --url option will upload the test results to a Refstack API server
       instead of the default Refstack API server.
+   e. Adding --offline option will not upload the test results.
