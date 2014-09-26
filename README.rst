@@ -5,11 +5,11 @@ refstack-client is a command line utility that allows you to execute Tempest
 test runs based on configurations you specify.  When finished running Tempest
 it sends the passed test data back to the Refstack API server.
 
-**Usage (Ubuntu)**
+**Usage**
 
-We've created an "easy button" for Ubuntu.
+We've created an "easy button" for Ubuntu, Centos, RHEL and openSuSe.
 
-$ sh ./setup_ubuntu_env.sh
+$ ./setup_env.sh
 
 **Start testing**
 
@@ -19,11 +19,12 @@ $ sh ./setup_ubuntu_env.sh
    (i.e. cd ~/refstack-client).
 3. Source to use the correct Python environment.
 
-   source test_runner/bin/activate
+   source .venv/bin/activate
 
 4. Execute test by typing:
 
-   ./refstack-client -c "Path of the tempest configuration file to use"
+   ./refstack-client -c "Path of the tempest configuration file\
+   to use"
 
    **Note:**
 
@@ -34,4 +35,3 @@ $ sh ./setup_ubuntu_env.sh
       (i.e. -t "tempest.api.identity.admin.test_roles").
    d. Adding --url option will upload the test results to a Refstack API server
       instead of the default Refstack API server.
-   e. Adding --offline option will not upload the test results.

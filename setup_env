@@ -1,0 +1,74 @@
+#!/bin/sh
+# Setup binary requirements
+if [ -n "$(command -v apt-get)" ]; then
+# For apt-get-based Linux distributions (Ubuntu, Debian)
+    # If we run script in container we need sudo
+    apt-get update
+    if [ ! -n "$(command -v sudo)" ]; then
+        apt-get -y install sudo
+    fi
+    # Workaroud for Ubuntu 10.04.
+    # There is no package 'git' in default ubuntu 10.04 repo's
+    sudo apt-get -s install git
+    if [ $? = 100 ]; then
+        sudo apt-get -y install python-software-properties
+        sudo add-apt-repository ppa:git-core/ppa
+        sudo apt-get update
+    fi
+    sudo apt-get -y install git curl wget tar unzip python-dev build-essential libssl-dev libxslt-dev libsasl2-dev libffi-dev libbz2-dev
+
+    # Setup pip for python
+    curl https://bootstrap.pypa.io/get-pip.py | sudo -E python -
+elif [ -n "$(command -v yum)" ]; then
+# For yum-based distributions (RHEL, Centos)
+    # If we run script in container we need sudo
+    if [ ! -f sudo ]; then
+        yum -y install sudo
+    fi
+    sudo yum -y install git curl wget tar unzip make python-devel.x86_64 gcc gcc-c++ libffi-devel libxml2-devel bzip2-devel libxslt-devel openssl-devel
+
+    # Setup pip for python
+    curl https://bootstrap.pypa.io/get-pip.py | sudo -E python -
+elif [ -n "$(command) -v zypper" ]; then
+# For zypper-based distributions (openSuSe, SELS)
+    # If we run script in container we need sudo
+    if [ ! -f sudo ]; then
+        zypper --no-gpg-checks --non-interactive install sudo
+    fi
+    sudo zypper --no-gpg-checks --non-interactive refresh
+    sudo zypper --non-interactive install git curl wget tar unzip make python-devel.x86_64 gcc gcc-c++ libffi-devel libxml2-devel zlib-devel libxslt-devel libopenssl-devel
+
+    # Setup pip for python
+    sudo zypper --non-interactive install python-pip
+else
+    echo "Neither apt-get nor yum nor zypper found"
+    exit 1
+fi
+
+if [ ! -n "$(command -v python2.7)" ]; then
+    echo "python2.7 not found. Building one..."
+    WORKDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+    mkdir ${WORKDIR}/.localpython
+    mkdir ${WORKDIR}/.python_src
+    cd ${WORKDIR}/.python_src
+    wget http://www.python.org/ftp/python/2.7.8/Python-2.7.8.tgz
+    tar -zxvf Python-2.7.8.tgz
+    cd Python-2.7.8
+
+    ./configure --prefix=${WORKDIR}/.localpython
+    make && make install
+    cd ${WORKDIR}
+    PYPATH="${WORKDIR}/.localpython/bin/python"
+else
+echo "python2.7 found!"
+PYPATH="python2.7"
+fi
+
+# Setup python requirements
+sudo pip install virtualenv
+# Create virtual environment
+if [ ! -d .venv ]; then
+    virtualenv .venv --python="$PYPATH"
+fi
+# Setup virtual environment
+.venv/bin/pip install -r requirements.txt

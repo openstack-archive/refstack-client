@@ -1,0 +1,5 @@
+#!/bin/sh
+cp -r /refstack-client /test
+cd /test
+./setup_env
+/bin/bash -c ". .venv/bin/activate; exec ./refstack-client -vv -c tempest.conf -t tempest.api.identity.admin.test_users"

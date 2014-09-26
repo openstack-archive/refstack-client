@@ -227,7 +227,7 @@ def parse_cli_args(args=None):
                         action='store',
                         required=False,
                         dest='tempest_dir',
-                        default='test_runner/src/tempest',
+                        default='.venv/src/tempest',
                         help='Path of the tempest project directory.')
 
     parser.add_argument('-c', '--conf-file',
