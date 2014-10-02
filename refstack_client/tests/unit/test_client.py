@@ -13,11 +13,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
-import ConfigParser
+
 import logging
 import os
 import subprocess
-import tempfile
 
 import mock
 from mock import MagicMock
@@ -27,6 +26,10 @@ import refstack_client.refstack_client as rc
 
 
 class TestRefstackClient(unittest.TestCase):
+
+    test_path = os.path.dirname(os.path.realpath(__file__))
+    conf_file_name = '%s/refstack-client.test.conf' % test_path
+
     def patch(self, name, **kwargs):
         """
         :param name: Name of class to be patched
@@ -38,33 +41,29 @@ class TestRefstackClient(unittest.TestCase):
         self.addCleanup(patcher.stop)
         return thing
 
-    def mock_argv(self, conf_file_name=None, verbose=None):
+    def mock_argv(self, conf_file_name=None, tempest_dir=None, verbose=None):
         """
-        Build argv for test
+        Build argv for test.
         :param conf_file_name: Configuration file name
         :param verbose: verbosity level
         :return: argv
         """
         if conf_file_name is None:
             conf_file_name = self.conf_file_name
+        if tempest_dir is None:
+            tempest_dir = self.test_path
         argv = ['-c', conf_file_name,
-                '--tempest-dir', self.test_path,
+                '--tempest-dir', tempest_dir,
                 '--test-cases', 'tempest.api.compute',
                 '--url', '0.0.0.0']
         if verbose:
             argv.append(verbose)
         return argv
 
-    def setUp(self):
+    def mock_keystone(self):
         """
-        Test case setup
+        Mock the Keystone client methods.
         """
-        logging.disable(logging.CRITICAL)
-        self.mock_tempest_process = MagicMock(name='tempest_runner')
-        self.mock_popen = self.patch(
-            'refstack_client.refstack_client.subprocess.Popen',
-            return_value=self.mock_tempest_process
-        )
         self.mock_identity_service = MagicMock(
             name='service', **{'type': 'identity', 'id': 'test-id'})
         self.mock_ks_client = MagicMock(
@@ -75,12 +74,16 @@ class TestRefstackClient(unittest.TestCase):
             'refstack_client.refstack_client.ksclient.Client',
             return_value=self.mock_ks_client
         )
-        self.test_path = os.path.dirname(os.path.realpath(__file__))
-        self.conf_file_name = '%s/refstack-client.test.conf' % self.test_path
+
+    def setUp(self):
+        """
+        Test case setup
+        """
+        logging.disable(logging.CRITICAL)
 
     def test_verbose(self):
         """
-        Test different verbosity levels
+        Test different verbosity levels.
         """
         args = rc.parse_cli_args(self.mock_argv())
         client = rc.RefstackClient(args)
@@ -94,76 +97,176 @@ class TestRefstackClient(unittest.TestCase):
         client = rc.RefstackClient(args)
         self.assertEqual(client.logger.level, logging.DEBUG)
 
-    def test_no_conf_file(self):
+    def test_get_next_stream_subunit_output_file(self):
         """
-        Test not existing configuration file
+        Test getting the subunit file from an existing .testrepository
+        directory that has a next-stream file.
         """
-        args = rc.parse_cli_args(self.mock_argv(conf_file_name='ptn-khl'))
-        self.assertRaises(SystemExit, rc.RefstackClient, args)
-
-    def test_run_with_default_config(self):
-        """
-        Test run with default configuration.
-        admin_tenant_id is set in configuration.
-        """
-        args = rc.parse_cli_args(self.mock_argv(verbose='-vv'))
+        args = rc.parse_cli_args(self.mock_argv())
         client = rc.RefstackClient(args)
-        client.run()
-        self.mock_popen.assert_called_with(
-            ('%s/run_tempest.sh' % self.test_path, '-C', self.conf_file_name,
-             '-N', '-t', '--', 'tempest.api.compute'),
-            stderr=None
-        )
+        output_file = client._get_next_stream_subunit_output_file(
+            self.test_path)
+
+        # The next-stream file contains a "1".
+        expected_file = expected_file = self.test_path + "/.testrepository/1"
+        self.assertEqual(expected_file, output_file)
+
+    def test_get_next_stream_subunit_output_file_nonexistent(self):
+        """
+        Test getting the subunit output file from a nonexistent
+        .testrepository directory.
+        """
+        args = rc.parse_cli_args(self.mock_argv())
+        client = rc.RefstackClient(args)
+        output_file = client._get_next_stream_subunit_output_file(
+            "/tempest/path")
+        expected_file = "/tempest/path/.testrepository/0"
+        self.assertEqual(expected_file, output_file)
+
+    def test_get_cpid_from_keystone_with_tenant_id(self):
+        """
+        Test getting the CPID from Keystone using an admin tenant ID.
+        """
+        args = rc.parse_cli_args(self.mock_argv())
+        client = rc.RefstackClient(args)
+        self.mock_keystone()
+        cpid = client._get_cpid_from_keystone(client.conf)
         self.ks_client_builder.assert_called_with(
             username='admin', tenant_id='admin_tenant_id',
             password='test', auth_url='0.0.0.0:35357'
         )
-        self.assertEqual('test-id', client.cpid)
+        self.assertEqual('test-id', cpid)
 
-    def test_run_with_admin_tenant_name(self):
+    def test_get_cpid_from_keystone_with_tenant_name(self):
         """
-        Test run with admin default configuration.
-        admin_tenant_name is set in configuration.
+        Test getting the CPID from Keystone using an admin tenant name.
         """
-        base_conf = ConfigParser.SafeConfigParser()
-        base_conf.read(self.conf_file_name)
-        base_conf.remove_option('identity', 'admin_tenant_id')
-        base_conf.set('identity', 'admin_tenant_name', 'admin_tenant_name')
-        test_conf = tempfile.NamedTemporaryFile()
-        base_conf.write(test_conf)
-        test_conf.flush()
-        args = rc.parse_cli_args(self.mock_argv(conf_file_name=test_conf.name,
-                                                verbose='-vv'))
+        args = rc.parse_cli_args(self.mock_argv())
         client = rc.RefstackClient(args)
-        client.run()
+        client.conf.remove_option('identity', 'admin_tenant_id')
+        client.conf.set('identity', 'admin_tenant_name', 'admin_tenant_name')
+        self.mock_keystone()
+        cpid = client._get_cpid_from_keystone(client.conf)
         self.ks_client_builder.assert_called_with(
             username='admin', tenant_name='admin_tenant_name',
             password='test', auth_url='0.0.0.0:35357'
         )
-        self.assertEqual('test-id', client.cpid)
 
-    def test_check_admin_tenant(self):
+        self.assertEqual('test-id', cpid)
+
+    def test_get_cpid_from_keystone_no_admin_tenant(self):
         """
-        Test exit under absence information about admin tenant info
+        Test exit under absence of information about admin tenant info.
         """
-        base_conf = ConfigParser.SafeConfigParser()
-        base_conf.read(self.conf_file_name)
-        base_conf.remove_option('identity', 'admin_tenant_id')
-        test_conf = tempfile.NamedTemporaryFile()
-        base_conf.write(test_conf)
-        test_conf.flush()
-        args = rc.parse_cli_args(self.mock_argv(conf_file_name=test_conf.name,
-                                                verbose='-vv'))
+        args = rc.parse_cli_args(self.mock_argv(verbose='-vv'))
+        client = rc.RefstackClient(args)
+        client.conf.remove_option('identity', 'admin_tenant_id')
+        self.assertRaises(SystemExit, client._get_cpid_from_keystone,
+                          client.conf)
+
+    def test_form_result_content(self):
+        """
+        Test that the request content is formed into the expected format.
+        """
+        args = rc.parse_cli_args(self.mock_argv())
+        client = rc.RefstackClient(args)
+        content = client._form_result_content(1, 1, ['tempest.sample.test'])
+        expected = {'cpid': 1,
+                    'duration_seconds': 1,
+                    'results': ['tempest.sample.test']}
+        self.assertEqual(expected, content)
+
+    def test_get_passed_tests(self):
+        """
+        Test that only passing tests are retrieved from a subunit file.
+        """
+        args = rc.parse_cli_args(self.mock_argv())
+        client = rc.RefstackClient(args)
+        subunit_file = self.test_path + "/.testrepository/0"
+        results = client.get_passed_tests(subunit_file)
+        expected = ['tempest.passed.test']
+        self.assertEqual(expected, results)
+
+    def test_run_tempest(self):
+        """
+        Test that the test command will run the tempest script using the
+        default configuration.
+        """
+        args = rc.parse_cli_args(self.mock_argv(verbose='-vv'))
+        client = rc.RefstackClient(args)
+
+        mock_popen = self.patch(
+            'refstack_client.refstack_client.subprocess.Popen',
+            return_value=MagicMock())
+        self.mock_keystone()
+        client.get_passed_tests = MagicMock(return_value=['test'])
+        client.post_results = MagicMock()
+        client._save_json_results = MagicMock()
+        client.run()
+        mock_popen.assert_called_with(
+            ('%s/run_tempest.sh' % self.test_path, '-C', self.conf_file_name,
+             '-N', '-t', '--', 'tempest.api.compute'),
+            stderr=None
+        )
+
+        expected_content = {'duration_seconds': mock.ANY,
+                            'cpid': 'test-id',
+                            'results': ['test']}
+        client.post_results.assert_called_with('0.0.0.0', expected_content)
+
+    def test_run_tempest_offline(self):
+        """
+        Test that the test command will run the tempest script in offline mode.
+        """
+        argv = self.mock_argv(verbose='-vv')
+        argv.append('--offline')
+        args = rc.parse_cli_args(argv)
+        client = rc.RefstackClient(args)
+
+        mock_popen = self.patch(
+            'refstack_client.refstack_client.subprocess.Popen',
+            return_value=MagicMock())
+        self.mock_keystone()
+        client.get_passed_tests = MagicMock(return_value=['test'])
+        client.post_results = MagicMock()
+        client._save_json_results = MagicMock()
+        client.run()
+        mock_popen.assert_called_with(
+            ('%s/run_tempest.sh' % self.test_path, '-C', self.conf_file_name,
+             '-N', '-t', '--', 'tempest.api.compute'),
+            stderr=None
+        )
+
+        # The method post_results should not be called if --offline was
+        # specified.
+        self.assertFalse(client.post_results.called)
+
+    def test_run_tempest_no_conf_file(self):
+        """
+        Test when a nonexistent configuration file is passed in.
+        """
+        args = rc.parse_cli_args(self.mock_argv(conf_file_name='ptn-khl'))
+        self.assertRaises(SystemExit, rc.RefstackClient, args)
+
+    def test_run_tempest_nonexisting_directory(self):
+        """
+        Test when a nonexistent Tempest directory is passed in.
+        """
+        args = rc.parse_cli_args(self.mock_argv(tempest_dir='/does/not/exist'))
         self.assertRaises(SystemExit, rc.RefstackClient, args)
 
     def test_failed_run(self):
         """
-        Test failed tempest run
+        Test failed tempest run.
         """
-        self.mock_tempest_process.communicate = MagicMock(
+        mock_tempest_process = MagicMock(name='tempest_runner')
+        self.patch('refstack_client.refstack_client.subprocess.Popen',
+                   return_value=mock_tempest_process)
+        mock_tempest_process.communicate = MagicMock(
             side_effect=subprocess.CalledProcessError(returncode=1,
                                                       cmd='./run_tempest.sh')
         )
+        self.mock_keystone()
         args = rc.parse_cli_args(self.mock_argv(verbose='-vv'))
         client = rc.RefstackClient(args)
         self.assertEqual(client.logger.level, logging.DEBUG)
