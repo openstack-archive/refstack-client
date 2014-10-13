@@ -55,41 +55,35 @@ class RefstackClient:
         else:
             self.logger.setLevel(logging.ERROR)
 
-        # assign local vars to match args
-        self.url = args.url
-        self.tempest_dir = args.tempest_dir
-        self.tempest_script = os.path.join(self.tempest_dir, 'run_tempest.sh')
-        self.test_cases = args.test_cases
-        self.verbose = args.verbose
-        self.offline = args.offline
+        self.args = args
+        self.tempest_script = os.path.join(self.args.tempest_dir,
+                                           'run_tempest.sh')
 
         # Check that the config file exists.
-        if not os.path.isfile(args.conf_file):
-            self.logger.error("File not valid: %s" % args.conf_file)
+        if not os.path.isfile(self.args.conf_file):
+            self.logger.error("Conf file not valid: %s" % self.args.conf_file)
             exit(1)
 
-        self.conf_file = args.conf_file
+        # Check that the Tempest directory is an existing directory.
+        if not os.path.isdir(self.args.tempest_dir):
+            self.logger.error("Tempest directory given is not a directory or "
+                              "does not exist: %s" % self.args.tempest_dir)
+            exit(1)
+
+        self.tempest_script = os.path.join(self.args.tempest_dir,
+                                           'run_tempest.sh')
+
+        self.conf_file = self.args.conf_file
         self.conf = ConfigParser.SafeConfigParser()
-        self.conf.read(self.conf_file)
+        self.conf.read(self.args.conf_file)
 
-        self.results_file = self._get_subunit_output_file()
-        self.cpid = self._get_cpid_from_keystone()
-
-    def post_results(self, content):
-        '''Post the combined results back to the server.'''
-
-        # TODO(cdiep): Post results once the API is available as outlined here:
-        # github.com/stackforge/refstack/blob/master/specs/approved/api-v1.md
-
-        self.logger.debug('API request content: %s ' % content)
-
-    def _get_subunit_output_file(self):
+    def _get_next_stream_subunit_output_file(self, tempest_dir):
         '''This method reads from the next-stream file in the .testrepository
            directory of the given Tempest path. The integer here is the name
            of the file where subunit output will be saved to.'''
         try:
             subunit_file = open(os.path.join(
-                                self.tempest_dir, '.testrepository',
+                                tempest_dir, '.testrepository',
                                 'next-stream'), 'r').read().rstrip()
         except (IOError, OSError):
             self.logger.debug('The .testrepository/next-stream file was not '
@@ -100,20 +94,20 @@ class RefstackClient:
             # there is a newly generated .testrepository directory.
             subunit_file = "0"
 
-        return os.path.join(self.tempest_dir, '.testrepository', subunit_file)
+        return os.path.join(tempest_dir, '.testrepository', subunit_file)
 
-    def _get_cpid_from_keystone(self):
+    def _get_cpid_from_keystone(self, conf_file):
         '''This will get the Keystone service ID which is used as the CPID.'''
         try:
-            args = {'auth_url': self.conf.get('identity', 'uri'),
-                    'username': self.conf.get('identity', 'admin_username'),
-                    'password': self.conf.get('identity', 'admin_password')}
+            args = {'auth_url': conf_file.get('identity', 'uri'),
+                    'username': conf_file.get('identity', 'admin_username'),
+                    'password': conf_file.get('identity', 'admin_password')}
 
             if self.conf.has_option('identity', 'admin_tenant_id'):
-                args['tenant_id'] = self.conf.get('identity',
+                args['tenant_id'] = conf_file.get('identity',
                                                   'admin_tenant_id')
             else:
-                args['tenant_name'] = self.conf.get('identity',
+                args['tenant_name'] = conf_file.get('identity',
                                                     'admin_tenant_name')
 
             client = ksclient.Client(**args)
@@ -127,38 +121,54 @@ class RefstackClient:
             self.logger.error("Invalid Config File: %s" % e)
             exit(1)
 
-    def _form_json_content(self, cpid, duration, results):
-        '''This method will create the JSON content for the request.'''
+    def _form_result_content(self, cpid, duration, results):
+        '''This method will create the content for the request. The spec at
+           github.com/stackforge/refstack/blob/master/specs/approved/api-v1.md.
+           defines the format expected by the API.'''
         content = {}
         content['cpid'] = cpid
         content['duration_seconds'] = duration
         content['results'] = results
-        return json.dumps(content)
+        return content
 
     def get_passed_tests(self, result_file):
-        '''Get just the tests IDs in a subunit file that passed Tempest.'''
+        '''Get a list of tests IDs that passed Tempest from a subunit file.'''
         subunit_processor = SubunitProcessor(result_file)
         results = subunit_processor.process_stream()
         return results
 
+    def post_results(self, url, content):
+        '''Post the combined results back to the server.'''
+
+        # TODO(cdiep): Post results once the API is available as outlined here:
+        # github.com/stackforge/refstack/blob/master/specs/approved/api-v1.md
+        json_content = json.dumps(content)
+        self.logger.debug('API request content: %s ' % json_content)
+
     def run(self):
         '''Execute tempest test against the cloud.'''
         try:
+            results_file = self._get_next_stream_subunit_output_file(
+                self.args.tempest_dir)
+            cpid = self._get_cpid_from_keystone(self.conf)
+
             self.logger.info("Starting Tempest test...")
             start_time = time.time()
 
-            # Run the tempest script, specifying the conf file and the
-            # flag telling it to not use a virtual environment.
+            # Run the tempest script, specifying the conf file, the flag
+            # telling it to not use a virtual environment (-N), and the flag
+            # telling it to run the tests serially (-t).
             cmd = (self.tempest_script, '-C', self.conf_file, '-N', '-t')
 
-            # Add the tempest test cases to test as arguments.
-            if self.test_cases:
-                cmd += ('--', self.test_cases)
+            # Add the tempest test cases to test as arguments. If no test
+            # cases are specified, then all Tempest API tests will be run.
+            if self.args.test_cases:
+                cmd += ('--', self.args.test_cases)
             else:
                 cmd += ('--', "tempest.api")
 
             # If there were two verbose flags, show tempest results.
-            if self.verbose > 1:
+            if self.args.verbose > 1:
                 stderr = None
             else:
                 # Suppress tempest results output. Note that testr prints
@@ -174,17 +184,16 @@ class RefstackClient:
             duration = int(elapsed)
 
             self.logger.info('Tempest test complete.')
-            self.logger.info('Subunit results located in: %s' %
-                             self.results_file)
+            self.logger.info('Subunit results located in: %s' % results_file)
 
-            results = self.get_passed_tests(self.results_file)
+            results = self.get_passed_tests(results_file)
             self.logger.info("Number of passed tests: %d" % len(results))
 
             # If the user did not specify the offline argument, then upload
             # the results.
-            if not self.offline:
-                content = self._form_json_content(self.cpid, duration, results)
-                self.post_results(content)
+            if not self.args.offline:
+                content = self._form_result_content(cpid, duration, results)
+                self.post_results(self.args.url, content)
 
         except subprocess.CalledProcessError as e:
             self.logger.error('%s failed to complete' % (e))
