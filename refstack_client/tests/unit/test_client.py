@@ -16,7 +16,6 @@
 
 import logging
 import os
-import subprocess
 
 import mock
 from mock import MagicMock
@@ -197,7 +196,7 @@ class TestRefstackClient(unittest.TestCase):
 
         mock_popen = self.patch(
             'refstack_client.refstack_client.subprocess.Popen',
-            return_value=MagicMock())
+            return_value=MagicMock(returncode=0))
         self.mock_keystone()
         client.get_passed_tests = MagicMock(return_value=['test'])
         client.post_results = MagicMock()
@@ -225,7 +224,7 @@ class TestRefstackClient(unittest.TestCase):
 
         mock_popen = self.patch(
             'refstack_client.refstack_client.subprocess.Popen',
-            return_value=MagicMock())
+            return_value=MagicMock(returncode=0))
         self.mock_keystone()
         client.get_passed_tests = MagicMock(return_value=['test'])
         client.post_results = MagicMock()
@@ -257,17 +256,13 @@ class TestRefstackClient(unittest.TestCase):
 
     def test_failed_run(self):
         """
-        Test failed tempest run.
+        Test when the Tempest script returns a non-zero exit code.
         """
-        mock_tempest_process = MagicMock(name='tempest_runner')
         self.patch('refstack_client.refstack_client.subprocess.Popen',
-                   return_value=mock_tempest_process)
-        mock_tempest_process.communicate = MagicMock(
-            side_effect=subprocess.CalledProcessError(returncode=1,
-                                                      cmd='./run_tempest.sh')
-        )
+                   return_value=MagicMock(returncode=1))
         self.mock_keystone()
         args = rc.parse_cli_args(self.mock_argv(verbose='-vv'))
         client = rc.RefstackClient(args)
-        self.assertEqual(client.logger.level, logging.DEBUG)
+        client.logger.error = MagicMock()
         client.run()
+        self.assertTrue(client.logger.error.called)

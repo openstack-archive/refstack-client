@@ -147,38 +147,38 @@ class RefstackClient:
 
     def run(self):
         '''Execute tempest test against the cloud.'''
-        try:
-            results_file = self._get_next_stream_subunit_output_file(
-                self.args.tempest_dir)
-            cpid = self._get_cpid_from_keystone(self.conf)
+        results_file = self._get_next_stream_subunit_output_file(
+            self.args.tempest_dir)
+        cpid = self._get_cpid_from_keystone(self.conf)
 
-            self.logger.info("Starting Tempest test...")
-            start_time = time.time()
+        self.logger.info("Starting Tempest test...")
+        start_time = time.time()
 
-            # Run the tempest script, specifying the conf file, the flag
-            # telling it to not use a virtual environment (-N), and the flag
-            # telling it to run the tests serially (-t).
-            cmd = (self.tempest_script, '-C', self.conf_file, '-N', '-t')
+        # Run the tempest script, specifying the conf file, the flag
+        # telling it to not use a virtual environment (-N), and the flag
+        # telling it to run the tests serially (-t).
+        cmd = (self.tempest_script, '-C', self.conf_file, '-N', '-t')
 
-            # Add the tempest test cases to test as arguments. If no test
-            # cases are specified, then all Tempest API tests will be run.
-            if self.args.test_cases:
-                cmd += ('--', self.args.test_cases)
-            else:
-                cmd += ('--', "tempest.api")
+        # Add the tempest test cases to test as arguments. If no test
+        # cases are specified, then all Tempest API tests will be run.
+        if self.args.test_cases:
+            cmd += ('--', self.args.test_cases)
+        else:
+            cmd += ('--', "tempest.api")
 
-            # If there were two verbose flags, show tempest results.
-            if self.args.verbose > 1:
-                stderr = None
-            else:
-                # Suppress tempest results output. Note that testr prints
-                # results to stderr.
-                stderr = open(os.devnull, 'w')
+        # If there were two verbose flags, show tempest results.
+        if self.args.verbose > 1:
+            stderr = None
+        else:
+            # Suppress tempest results output. Note that testr prints
+            # results to stderr.
+            stderr = open(os.devnull, 'w')
 
-            # Execute the tempest test script in a subprocess.
-            process = subprocess.Popen(cmd, stderr=stderr)
-            process.communicate()
+        # Execute the tempest test script in a subprocess.
+        process = subprocess.Popen(cmd, stderr=stderr)
+        process.communicate()
 
+        if process.returncode == 0:
             end_time = time.time()
             elapsed = end_time - start_time
             duration = int(elapsed)
@@ -194,9 +194,9 @@ class RefstackClient:
             if not self.args.offline:
                 content = self._form_result_content(cpid, duration, results)
                 self.post_results(self.args.url, content)
-
-        except subprocess.CalledProcessError as e:
-            self.logger.error('%s failed to complete' % (e))
+        else:
+            self.logger.error("Problem executing Tempest script. Exit code %d",
+                              process.returncode)
 
 
 def parse_cli_args(args=None):
