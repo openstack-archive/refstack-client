@@ -15,7 +15,9 @@
 #
 
 import logging
+import json
 import os
+import tempfile
 
 import mock
 from mock import MagicMock
@@ -51,7 +53,8 @@ class TestRefstackClient(unittest.TestCase):
             conf_file_name = self.conf_file_name
         if tempest_dir is None:
             tempest_dir = self.test_path
-        argv = ['-c', conf_file_name,
+        argv = ['test',
+                '-c', conf_file_name,
                 '--tempest-dir', tempest_dir,
                 '--test-cases', 'tempest.api.compute',
                 '--url', '0.0.0.0']
@@ -86,14 +89,17 @@ class TestRefstackClient(unittest.TestCase):
         """
         args = rc.parse_cli_args(self.mock_argv())
         client = rc.RefstackClient(args)
+        client._prep_test()
         self.assertEqual(client.logger.level, logging.ERROR)
 
         args = rc.parse_cli_args(self.mock_argv(verbose='-v'))
         client = rc.RefstackClient(args)
+        client._prep_test()
         self.assertEqual(client.logger.level, logging.INFO)
 
         args = rc.parse_cli_args(self.mock_argv(verbose='-vv'))
         client = rc.RefstackClient(args)
+        client._prep_test()
         self.assertEqual(client.logger.level, logging.DEBUG)
 
     def test_get_next_stream_subunit_output_file(self):
@@ -128,6 +134,7 @@ class TestRefstackClient(unittest.TestCase):
         """
         args = rc.parse_cli_args(self.mock_argv())
         client = rc.RefstackClient(args)
+        client._prep_test()
         self.mock_keystone()
         cpid = client._get_cpid_from_keystone(client.conf)
         self.ks_client_builder.assert_called_with(
@@ -142,6 +149,7 @@ class TestRefstackClient(unittest.TestCase):
         """
         args = rc.parse_cli_args(self.mock_argv())
         client = rc.RefstackClient(args)
+        client._prep_test()
         client.conf.remove_option('identity', 'admin_tenant_id')
         client.conf.set('identity', 'admin_tenant_name', 'admin_tenant_name')
         self.mock_keystone()
@@ -159,6 +167,7 @@ class TestRefstackClient(unittest.TestCase):
         """
         args = rc.parse_cli_args(self.mock_argv(verbose='-vv'))
         client = rc.RefstackClient(args)
+        client._prep_test()
         client.conf.remove_option('identity', 'admin_tenant_id')
         self.assertRaises(SystemExit, client._get_cpid_from_keystone,
                           client.conf)
@@ -174,6 +183,25 @@ class TestRefstackClient(unittest.TestCase):
                     'duration_seconds': 1,
                     'results': ['tempest.sample.test']}
         self.assertEqual(expected, content)
+
+    def test_save_json_result(self):
+        """
+        Test that the results are properly written to a JSON file.
+        """
+        args = rc.parse_cli_args(self.mock_argv())
+        client = rc.RefstackClient(args)
+        results = {'cpid': 1,
+                   'duration_seconds': 1,
+                   'results': ['tempest.sample.test']}
+        temp_file = tempfile.NamedTemporaryFile()
+        client._save_json_results(results, temp_file.name)
+
+        # Get the JSON that was written to the file and make sure it
+        # matches the expected value.
+        json_file = open(temp_file.name)
+        json_data = json.load(json_file)
+        json_file.close()
+        self.assertEqual(results, json_data)
 
     def test_get_passed_tests(self):
         """
@@ -201,7 +229,7 @@ class TestRefstackClient(unittest.TestCase):
         client.get_passed_tests = MagicMock(return_value=['test'])
         client.post_results = MagicMock()
         client._save_json_results = MagicMock()
-        client.run()
+        client.test()
         mock_popen.assert_called_with(
             ('%s/run_tempest.sh' % self.test_path, '-C', self.conf_file_name,
              '-N', '-t', '--', 'tempest.api.compute'),
@@ -229,7 +257,7 @@ class TestRefstackClient(unittest.TestCase):
         client.get_passed_tests = MagicMock(return_value=['test'])
         client.post_results = MagicMock()
         client._save_json_results = MagicMock()
-        client.run()
+        client.test()
         mock_popen.assert_called_with(
             ('%s/run_tempest.sh' % self.test_path, '-C', self.conf_file_name,
              '-N', '-t', '--', 'tempest.api.compute'),
@@ -245,14 +273,16 @@ class TestRefstackClient(unittest.TestCase):
         Test when a nonexistent configuration file is passed in.
         """
         args = rc.parse_cli_args(self.mock_argv(conf_file_name='ptn-khl'))
-        self.assertRaises(SystemExit, rc.RefstackClient, args)
+        client = rc.RefstackClient(args)
+        self.assertRaises(SystemExit, client.test)
 
     def test_run_tempest_nonexisting_directory(self):
         """
         Test when a nonexistent Tempest directory is passed in.
         """
         args = rc.parse_cli_args(self.mock_argv(tempest_dir='/does/not/exist'))
-        self.assertRaises(SystemExit, rc.RefstackClient, args)
+        client = rc.RefstackClient(args)
+        self.assertRaises(SystemExit, client.test)
 
     def test_failed_run(self):
         """
@@ -264,5 +294,33 @@ class TestRefstackClient(unittest.TestCase):
         args = rc.parse_cli_args(self.mock_argv(verbose='-vv'))
         client = rc.RefstackClient(args)
         client.logger.error = MagicMock()
-        client.run()
+        client.test()
         self.assertTrue(client.logger.error.called)
+
+    def test_upload(self):
+        """
+        Test that the upload command runs as expected.
+        """
+        upload_file_path = self.test_path + "/.testrepository/0.json"
+        args = rc.parse_cli_args(['upload', upload_file_path,
+                                  '--url', 'http://api.test.org'])
+        client = rc.RefstackClient(args)
+
+        client.post_results = MagicMock()
+        client.upload()
+        expected_json = {'duration_seconds': 0,
+                         'cpid': 'test-id',
+                         'results': ['tempest.passed.test']}
+
+        client.post_results.assert_called_with('http://api.test.org',
+                                               expected_json)
+
+    def test_upload_nonexisting_file(self):
+        """
+        Test that the upload file does not exist
+        """
+        upload_file_path = self.test_path + "/.testrepository/foo.json"
+        args = rc.parse_cli_args(['upload', upload_file_path,
+                                  '--url', 'http://api.test.org'])
+        client = rc.RefstackClient(args)
+        self.assertRaises(SystemExit, client.upload)

@@ -1,0 +1,8 @@
+{
+    "duration_seconds": 0,
+    "cpid": "test-id",
+    "results": [
+        "tempest.passed.test"
+    ]
+}
+

@@ -48,16 +48,17 @@ class RefstackClient:
             logging.Formatter(self.log_format))
         self.logger.addHandler(self.console_log_handle)
 
-        if args.verbose > 1:
+        self.args = args
+
+        if self.args.verbose > 1:
             self.logger.setLevel(logging.DEBUG)
-        elif args.verbose == 1:
+        elif self.args.verbose == 1:
             self.logger.setLevel(logging.INFO)
         else:
             self.logger.setLevel(logging.ERROR)
 
-        self.args = args
-        self.tempest_script = os.path.join(self.args.tempest_dir,
-                                           'run_tempest.sh')
+    def _prep_test(self):
+        '''Prepare a tempest test against a cloud.'''
 
         # Check that the config file exists.
         if not os.path.isfile(self.args.conf_file):
@@ -76,6 +77,16 @@ class RefstackClient:
         self.conf_file = self.args.conf_file
         self.conf = ConfigParser.SafeConfigParser()
         self.conf.read(self.args.conf_file)
+        self.tempest_script = os.path.join(self.args.tempest_dir,
+                                           'run_tempest.sh')
+
+    def _prep_upload(self):
+        '''Prepare an upload to the Refstack_api'''
+        if not os.path.isfile(self.args.file):
+            self.logger.error("File not valid: %s" % self.args.file)
+            exit(1)
+        self.logger.setLevel(logging.DEBUG)
+        self.upload_file = self.args.file
 
     def _get_next_stream_subunit_output_file(self, tempest_dir):
         '''This method reads from the next-stream file in the .testrepository
@@ -131,6 +142,12 @@ class RefstackClient:
         content['results'] = results
         return content
 
+    def _save_json_results(self, results, path):
+        '''Save the output results from the Tempest run as a JSON file'''
+        file = open(path, "w+")
+        file.write(json.dumps(results, indent=4, separators=(',', ': ')))
+        file.close()
+
     def get_passed_tests(self, result_file):
         '''Get a list of tests IDs that passed Tempest from a subunit file.'''
         subunit_processor = SubunitProcessor(result_file)
@@ -145,8 +162,9 @@ class RefstackClient:
         json_content = json.dumps(content)
         self.logger.debug('API request content: %s ' % json_content)
 
-    def run(self):
-        '''Execute tempest test against the cloud.'''
+    def test(self):
+        '''Execute Tempest test against the cloud.'''
+        self._prep_test()
         results_file = self._get_next_stream_subunit_output_file(
             self.args.tempest_dir)
         cpid = self._get_cpid_from_keystone(self.conf)
@@ -189,6 +207,11 @@ class RefstackClient:
             results = self.get_passed_tests(results_file)
             self.logger.info("Number of passed tests: %d" % len(results))
 
+            content = self._form_result_content(cpid, duration, results)
+            json_path = results_file + ".json"
+            self._save_json_results(content, json_path)
+            self.logger.info('JSON results saved in: %s' % json_path)
+
             # If the user did not specify the offline argument, then upload
             # the results.
             if not self.args.offline:
@@ -198,50 +221,82 @@ class RefstackClient:
             self.logger.error("Problem executing Tempest script. Exit code %d",
                               process.returncode)
 
+    def upload(self):
+        '''Perform upload to Refstack URL.'''
+        self._prep_upload()
+        json_file = open(self.upload_file)
+        json_data = json.load(json_file)
+        json_file.close()
+        self.post_results(self.args.url, json_data)
+
 
 def parse_cli_args(args=None):
 
-    parser = argparse.ArgumentParser(description='Starts a tempest test',
+    usage_string = ('refstack-client [-h] {upload,test} ...\n\n'
+                    'To see help on specific argument, do:\n'
+                    'refstack-client <ARG> -h')
+
+    parser = argparse.ArgumentParser(description='Refstack-client arguments',
                                      formatter_class=argparse.
-                                     ArgumentDefaultsHelpFormatter)
+                                     ArgumentDefaultsHelpFormatter,
+                                     usage=usage_string)
 
-    parser.add_argument('-v', '--verbose',
-                        action='count',
-                        help='Show verbose output. Note that -vv will show '
-                             'Tempest test result output.')
+    subparsers = parser.add_subparsers(help='Available subcommands.')
 
-    parser.add_argument('--offline',
-                        action='store_true',
-                        help='Do not upload test results after running '
-                             'Tempest.')
+    # Arguments that go with all subcommands.
+    shared_args = argparse.ArgumentParser(add_help=False)
+    shared_args.add_argument('-v', '--verbose',
+                             action='count',
+                             help='Show verbose output.')
 
-    parser.add_argument('--url',
-                        action='store',
-                        required=False,
-                        default='https://api.refstack.org',
-                        type=str,
-                        help='Refstack API URL to post results to (e.g. --url '
-                             'https://127.0.0.1:8000).')
+    shared_args.add_argument('--url',
+                             action='store',
+                             required=False,
+                             default='https://api.refstack.org',
+                             type=str,
+                             help='Refstack API URL to upload results to '
+                                  '(--url https://127.0.0.1:8000).')
 
-    parser.add_argument('--tempest-dir',
-                        action='store',
-                        required=False,
-                        dest='tempest_dir',
-                        default='.venv/src/tempest',
-                        help='Path of the tempest project directory.')
+    # Upload command
+    parser_upload = subparsers.add_parser('upload', parents=[shared_args],
+                                          help='Upload an existing result '
+                                               'file. ')
+    parser_upload.add_argument('file',
+                               type=str,
+                               help='Path of JSON results file.')
+    parser_upload.set_defaults(func="upload")
 
-    parser.add_argument('-c', '--conf-file',
-                        action='store',
-                        required=True,
-                        dest='conf_file',
-                        type=str,
-                        help='Path of the tempest configuration file to use.')
+    # Test command
+    parser_test = subparsers.add_parser('test', parents=[shared_args],
+                                        help='Run Tempest against a cloud.')
 
-    parser.add_argument('-t', '--test-cases',
-                        action='store',
-                        required=False,
-                        dest='test_cases',
-                        type=str,
-                        help='Specify a subset of test cases to run '
-                             '(e.g. --test-cases tempest.api.compute).')
+    parser_test.add_argument('--tempest-dir',
+                             action='store',
+                             required=False,
+                             dest='tempest_dir',
+                             default='.venv/src/tempest',
+                             help='Path of the Tempest project directory.')
+
+    parser_test.add_argument('-c', '--conf-file',
+                             action='store',
+                             required=True,
+                             dest='conf_file',
+                             type=str,
+                             help='Path of the Tempest configuration file to '
+                                  'use.')
+
+    parser_test.add_argument('-t', '--test-cases',
+                             action='store',
+                             required=False,
+                             dest='test_cases',
+                             type=str,
+                             help='Specify a subset of test cases to run '
+                                  '(e.g. --test-cases tempest.api.compute).')
+
+    parser_test.add_argument('--offline',
+                             action='store_true',
+                             help='Do not upload test results after running '
+                                  'Tempest.')
+    parser_test.set_defaults(func="test")
+
     return parser.parse_args(args=args)
