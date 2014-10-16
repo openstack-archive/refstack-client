@@ -1,0 +1,10 @@
+Verified+2: Jenkins
+Code-Review+2: David Lenwell <dlenwell@gmail.com>
+Workflow+1: David Lenwell <dlenwell@gmail.com>
+Code-Review+1: Paul Van Eck <pvaneck@us.ibm.com>
+Code-Review+2: Catherine Diep <cdiep@us.ibm.com>
+Submitted-by: Jenkins
+Submitted-at: Thu, 16 Oct 2014 16:38:44 +0000
+Reviewed-on: https://review.openstack.org/124403
+Project: stackforge/refstack-client
+Branch: refs/heads/master
