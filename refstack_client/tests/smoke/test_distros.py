@@ -53,7 +53,7 @@ class TestSequenceFunctions(unittest.TestCase):
     def test_opensuse_13(self):
         # offcial opensuse image has outdated certificates
         # we can't use it while this issue isn't fixed
-        distro_image = 'mmckeen/opensuse-13-1'
+        distro_image = 'opensuse/13.2'
         self.run_test(distro_image)
 
 if __name__ == '__main__':

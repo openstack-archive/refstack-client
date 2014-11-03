@@ -1,74 +1,143 @@
-#!/bin/sh
-# Setup binary requirements
+#!/bin/bash
+
+# Prints help
+function usage {
+    SCRIPT_NAME="basename ${BASH_SOURCE[0]}"
+    echo "Usage: ${SCRIPT_NAME} [OPTION]..."
+    echo "Setup Refstack client with test environment"
+    echo ""
+    echo "  -h,                      Print this usage message"
+    echo "  -t                       Tempest test runner tag release. Default is latest tag"
+}
+
+#Check that parameter is a valid tag in tempest repository
+function check_tag {
+        tags="$(git tag)"
+        for tag in ${tags}; do
+                [[ "${tag}" == "$1" ]] && return 0;
+        done
+        return 1
+}
+
+#Install git
 if [ -n "$(command -v apt-get)" ]; then
-# For apt-get-based Linux distributions (Ubuntu, Debian)
+    # For apt-get-based Linux distributions (Ubuntu, Debian)
     # If we run script in container we need sudo
-    apt-get update
     if [ ! -n "$(command -v sudo)" ]; then
+        apt-get update
         apt-get -y install sudo
-    fi
-    # Workaroud for Ubuntu 10.04.
-    # There is no package 'git' in default ubuntu 10.04 repo's
-    sudo apt-get -s install git
-    if [ $? = 100 ]; then
-        sudo apt-get -y install python-software-properties
-        sudo add-apt-repository ppa:git-core/ppa
+    else
         sudo apt-get update
     fi
-    sudo apt-get -y install git curl wget tar unzip python-dev build-essential libssl-dev libxslt-dev libsasl2-dev libffi-dev libbz2-dev
-
-    # Setup pip for python
-    curl https://bootstrap.pypa.io/get-pip.py | sudo -E python -
+    sudo apt-get -y install git
 elif [ -n "$(command -v yum)" ]; then
-# For yum-based distributions (RHEL, Centos)
+    # For yum-based distributions (RHEL, Centos)
     # If we run script in container we need sudo
     if [ ! -f sudo ]; then
         yum -y install sudo
     fi
-    sudo yum -y install git curl wget tar unzip make python-devel.x86_64 gcc gcc-c++ libffi-devel libxml2-devel bzip2-devel libxslt-devel openssl-devel
-
-    # Setup pip for python
-    curl https://bootstrap.pypa.io/get-pip.py | sudo -E python -
+    sudo yum -y install git
 elif [ -n "$(command) -v zypper" ]; then
-# For zypper-based distributions (openSuSe, SELS)
+    # For zypper-based distributions (openSuSe, SELS)
     # If we run script in container we need sudo
     if [ ! -f sudo ]; then
-        zypper --no-gpg-checks --non-interactive install sudo
+        zypper --gpg-auto-import-keys --non-interactive refresh
+        zypper --non-interactive install sudo
+    else
+        sudo zypper --gpg-auto-import-keys --non-interactive refresh
     fi
-    sudo zypper --no-gpg-checks --non-interactive refresh
-    sudo zypper --non-interactive install git curl wget tar unzip make python-devel.x86_64 gcc gcc-c++ libffi-devel libxml2-devel zlib-devel libxslt-devel libopenssl-devel
-
-    # Setup pip for python
-    sudo zypper --non-interactive install python-pip
+    sudo zypper --non-interactive install git
 else
     echo "Neither apt-get nor yum nor zypper found"
     exit 1
 fi
 
+WORKDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+#Checkout tempest on spceified tag
+if [ -d "${WORKDIR}/.tempest" ]; then
+    while true; do
+        read -p "Installed tempest found.We should remove it. All data from previouse test runs will be deleted. Continue (y/n) ?" yn
+        case ${yn} in
+            [Yy]* ) rm -rf ${WORKDIR}/.tempest; break;;
+            [Nn]* ) exit 1;;
+            * ) echo "Please answer yes or no.";;
+        esac
+    done
+fi
+git clone https://github.com/openstack/tempest.git ${WORKDIR}/.tempest
+cd ${WORKDIR}/.tempest
+TAG="$(git describe --abbrev=0 --tags)"
+while getopts t:h FLAG; do
+    case ${FLAG} in
+        t)
+            TAG=$OPTARG
+            if check_tag TAG ; then
+                echo -e \\n"Tag $TAG not found in tempest github repository"
+                exit 1
+            fi
+            ;;
+        h)  #show help
+            usage
+            ;;
+        \?) #unrecognized option - show help
+            echo -e \\n"Option -$OPTARG not allowed."
+            usage
+            ;;
+    esac
+done
+shift $((OPTIND-1))  #This tells getopts to move on to the next argument.
+git checkout -q tags/${TAG}
+cd ${WORKDIR}
+
+# Setup binary requirements
+if [ -n "$(command -v apt-get)" ]; then
+    # For apt-get-based Linux distributions (Ubuntu, Debian)
+    sudo apt-get -y install curl wget tar unzip python-dev build-essential libssl-dev libxslt-dev libsasl2-dev libffi-dev libbz2-dev
+elif [ -n "$(command -v yum)" ]; then
+    # For yum-based distributions (RHEL, Centos)
+    sudo yum -y install curl wget tar unzip make python-devel.x86_64 gcc gcc-c++ libffi-devel libxml2-devel bzip2-devel libxslt-devel openssl-devel
+elif [ -n "$(command) -v zypper" ]; then
+    # For zypper-based distributions (openSuSe, SELS)
+    sudo zypper --non-interactive install curl wget tar unzip make python-devel.x86_64 gcc gcc-c++ libffi-devel libxml2-devel zlib-devel libxslt-devel libopenssl-devel python-xml
+else
+    echo "Neither apt-get nor yum nor zypper found"
+    exit 1
+fi
+
+#Build local python interpreter if needed
 if [ ! -n "$(command -v python2.7)" ]; then
-    echo "python2.7 not found. Building one..."
-    WORKDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+    PY_VERSION="2.7.8"
+    echo "python2.7 not found. Building python ${PY_VERSION}..."
     mkdir ${WORKDIR}/.localpython
     mkdir ${WORKDIR}/.python_src
     cd ${WORKDIR}/.python_src
-    wget http://www.python.org/ftp/python/2.7.8/Python-2.7.8.tgz
-    tar -zxvf Python-2.7.8.tgz
-    cd Python-2.7.8
+    wget http://www.python.org/ftp/python/${PY_VERSION}/Python-${PY_VERSION}.tgz
+    tar zxvf Python-${PY_VERSION}.tgz
+    cd Python-${PY_VERSION}
 
     ./configure --prefix=${WORKDIR}/.localpython
     make && make install
     cd ${WORKDIR}
+    rm -rf ${WORKDIR}/.python_src
     PYPATH="${WORKDIR}/.localpython/bin/python"
 else
 echo "python2.7 found!"
 PYPATH="python2.7"
 fi
 
-# Setup python requirements
-sudo pip install virtualenv
-# Create virtual environment
-if [ ! -d .venv ]; then
-    virtualenv .venv --python="$PYPATH"
+#Setup virtual environments for refstack-client and tempest
+VENV_VERSION='1.11.6'
+wget https://pypi.python.org/packages/source/v/virtualenv/virtualenv-${VENV_VERSION}.tar.gz
+tar xvfz virtualenv-${VENV_VERSION}.tar.gz
+cd virtualenv-${VENV_VERSION}
+if [ -d ${WORKDIR}/.venv ]; then
+    rm -rf ${WORKDIR}/.venv
 fi
-# Setup virtual environment
-.venv/bin/pip install -r requirements.txt
+python virtualenv.py ${WORKDIR}/.venv --python="${PYPATH}"
+python virtualenv.py ${WORKDIR}/.tempest/.venv --python="${PYPATH}"
+cd ..
+rm -rf virtualenv-${VENV_VERSION}
+rm virtualenv-${VENV_VERSION}.tar.gz
+${WORKDIR}/.venv/bin/pip install -r ${WORKDIR}/requirements.txt
+${WORKDIR}/.tempest/.venv/bin/pip install -r ${WORKDIR}/.tempest/requirements.txt

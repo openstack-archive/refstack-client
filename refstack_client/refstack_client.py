@@ -37,6 +37,13 @@ from keystoneclient.v2_0 import client as ksclient
 from subunit_processor import SubunitProcessor
 
 
+def get_input():
+    """
+    Wrapper for raw_input. Necessary for testing.
+    """
+    return raw_input().lower()  # pragma: no cover
+
+
 class RefstackClient:
     log_format = "%(asctime)s %(name)s:%(lineno)d %(levelname)s %(message)s"
 
@@ -49,6 +56,7 @@ class RefstackClient:
         self.logger.addHandler(self.console_log_handle)
 
         self.args = args
+        self.tempest_dir = '.tempest'
 
         if self.args.verbose > 1:
             self.logger.setLevel(logging.DEBUG)
@@ -66,18 +74,18 @@ class RefstackClient:
             exit(1)
 
         # Check that the Tempest directory is an existing directory.
-        if not os.path.isdir(self.args.tempest_dir):
+        if not os.path.isdir(self.tempest_dir):
             self.logger.error("Tempest directory given is not a directory or "
-                              "does not exist: %s" % self.args.tempest_dir)
+                              "does not exist: %s" % self.tempest_dir)
             exit(1)
 
-        self.tempest_script = os.path.join(self.args.tempest_dir,
+        self.tempest_script = os.path.join(self.tempest_dir,
                                            'run_tempest.sh')
 
         self.conf_file = self.args.conf_file
         self.conf = ConfigParser.SafeConfigParser()
         self.conf.read(self.args.conf_file)
-        self.tempest_script = os.path.join(self.args.tempest_dir,
+        self.tempest_script = os.path.join(self.tempest_dir,
                                            'run_tempest.sh')
 
     def _prep_upload(self):
@@ -166,7 +174,7 @@ class RefstackClient:
         '''Execute Tempest test against the cloud.'''
         self._prep_test()
         results_file = self._get_next_stream_subunit_output_file(
-            self.args.tempest_dir)
+            self.tempest_dir)
         cpid = self._get_cpid_from_keystone(self.conf)
 
         self.logger.info("Starting Tempest test...")
@@ -175,7 +183,7 @@ class RefstackClient:
         # Run the tempest script, specifying the conf file, the flag
         # telling it to not use a virtual environment (-N), and the flag
         # telling it to run the tests serially (-t).
-        cmd = (self.tempest_script, '-C', self.conf_file, '-N', '-t')
+        cmd = (self.tempest_script, '-C', self.conf_file, '-V', '-t')
 
         # Add the tempest test cases to test as arguments. If no test
         # cases are specified, then all Tempest API tests will be run.
@@ -232,7 +240,7 @@ class RefstackClient:
 
 def parse_cli_args(args=None):
 
-    usage_string = ('refstack-client [-h] {upload,test} ...\n\n'
+    usage_string = ('refstack-client [-h] {upload,test,setup} ...\n\n'
                     'To see help on specific argument, do:\n'
                     'refstack-client <ARG> -h')
 
@@ -249,33 +257,29 @@ def parse_cli_args(args=None):
                              action='count',
                              help='Show verbose output.')
 
-    shared_args.add_argument('--url',
-                             action='store',
-                             required=False,
-                             default='https://api.refstack.org',
-                             type=str,
-                             help='Refstack API URL to upload results to '
-                                  '(--url https://127.0.0.1:8000).')
+    url_arg = argparse.ArgumentParser(add_help=False)
+    url_arg.add_argument('--url',
+                         action='store',
+                         required=False,
+                         default='https://api.refstack.org',
+                         type=str,
+                         help='Refstack API URL to upload results to '
+                              '(--url https://127.0.0.1:8000).')
 
     # Upload command
-    parser_upload = subparsers.add_parser('upload', parents=[shared_args],
-                                          help='Upload an existing result '
-                                               'file. ')
+    parser_upload = subparsers.add_parser(
+        'upload', parents=[shared_args, url_arg],
+        help='Upload an existing result file.'
+    )
     parser_upload.add_argument('file',
                                type=str,
                                help='Path of JSON results file.')
     parser_upload.set_defaults(func="upload")
 
     # Test command
-    parser_test = subparsers.add_parser('test', parents=[shared_args],
-                                        help='Run Tempest against a cloud.')
-
-    parser_test.add_argument('--tempest-dir',
-                             action='store',
-                             required=False,
-                             dest='tempest_dir',
-                             default='.venv/src/tempest',
-                             help='Path of the Tempest project directory.')
+    parser_test = subparsers.add_parser(
+        'test', parents=[shared_args, url_arg],
+        help='Run Tempest against a cloud.')
 
     parser_test.add_argument('-c', '--conf-file',
                              action='store',

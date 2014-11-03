@@ -18,6 +18,7 @@ import logging
 import json
 import os
 import tempfile
+import subprocess
 
 import mock
 from mock import MagicMock
@@ -42,7 +43,7 @@ class TestRefstackClient(unittest.TestCase):
         self.addCleanup(patcher.stop)
         return thing
 
-    def mock_argv(self, conf_file_name=None, tempest_dir=None, verbose=None):
+    def mock_argv(self, conf_file_name=None, verbose=None):
         """
         Build argv for test.
         :param conf_file_name: Configuration file name
@@ -51,11 +52,8 @@ class TestRefstackClient(unittest.TestCase):
         """
         if conf_file_name is None:
             conf_file_name = self.conf_file_name
-        if tempest_dir is None:
-            tempest_dir = self.test_path
         argv = ['test',
                 '-c', conf_file_name,
-                '--tempest-dir', tempest_dir,
                 '--test-cases', 'tempest.api.compute',
                 '--url', '0.0.0.0']
         if verbose:
@@ -89,16 +87,19 @@ class TestRefstackClient(unittest.TestCase):
         """
         args = rc.parse_cli_args(self.mock_argv())
         client = rc.RefstackClient(args)
+        client.tempest_dir = self.test_path
         client._prep_test()
         self.assertEqual(client.logger.level, logging.ERROR)
 
         args = rc.parse_cli_args(self.mock_argv(verbose='-v'))
         client = rc.RefstackClient(args)
+        client.tempest_dir = self.test_path
         client._prep_test()
         self.assertEqual(client.logger.level, logging.INFO)
 
         args = rc.parse_cli_args(self.mock_argv(verbose='-vv'))
         client = rc.RefstackClient(args)
+        client.tempest_dir = self.test_path
         client._prep_test()
         self.assertEqual(client.logger.level, logging.DEBUG)
 
@@ -109,6 +110,7 @@ class TestRefstackClient(unittest.TestCase):
         """
         args = rc.parse_cli_args(self.mock_argv())
         client = rc.RefstackClient(args)
+        client.tempest_dir = self.test_path
         output_file = client._get_next_stream_subunit_output_file(
             self.test_path)
 
@@ -134,6 +136,7 @@ class TestRefstackClient(unittest.TestCase):
         """
         args = rc.parse_cli_args(self.mock_argv())
         client = rc.RefstackClient(args)
+        client.tempest_dir = self.test_path
         client._prep_test()
         self.mock_keystone()
         cpid = client._get_cpid_from_keystone(client.conf)
@@ -149,6 +152,7 @@ class TestRefstackClient(unittest.TestCase):
         """
         args = rc.parse_cli_args(self.mock_argv())
         client = rc.RefstackClient(args)
+        client.tempest_dir = self.test_path
         client._prep_test()
         client.conf.remove_option('identity', 'admin_tenant_id')
         client.conf.set('identity', 'admin_tenant_name', 'admin_tenant_name')
@@ -167,6 +171,7 @@ class TestRefstackClient(unittest.TestCase):
         """
         args = rc.parse_cli_args(self.mock_argv(verbose='-vv'))
         client = rc.RefstackClient(args)
+        client.tempest_dir = self.test_path
         client._prep_test()
         client.conf.remove_option('identity', 'admin_tenant_id')
         self.assertRaises(SystemExit, client._get_cpid_from_keystone,
@@ -221,7 +226,7 @@ class TestRefstackClient(unittest.TestCase):
         """
         args = rc.parse_cli_args(self.mock_argv(verbose='-vv'))
         client = rc.RefstackClient(args)
-
+        client.tempest_dir = self.test_path
         mock_popen = self.patch(
             'refstack_client.refstack_client.subprocess.Popen',
             return_value=MagicMock(returncode=0))
@@ -232,7 +237,7 @@ class TestRefstackClient(unittest.TestCase):
         client.test()
         mock_popen.assert_called_with(
             ('%s/run_tempest.sh' % self.test_path, '-C', self.conf_file_name,
-             '-N', '-t', '--', 'tempest.api.compute'),
+             '-V', '-t', '--', 'tempest.api.compute'),
             stderr=None
         )
 
@@ -249,7 +254,7 @@ class TestRefstackClient(unittest.TestCase):
         argv.append('--offline')
         args = rc.parse_cli_args(argv)
         client = rc.RefstackClient(args)
-
+        client.tempest_dir = self.test_path
         mock_popen = self.patch(
             'refstack_client.refstack_client.subprocess.Popen',
             return_value=MagicMock(returncode=0))
@@ -260,7 +265,7 @@ class TestRefstackClient(unittest.TestCase):
         client.test()
         mock_popen.assert_called_with(
             ('%s/run_tempest.sh' % self.test_path, '-C', self.conf_file_name,
-             '-N', '-t', '--', 'tempest.api.compute'),
+             '-V', '-t', '--', 'tempest.api.compute'),
             stderr=None
         )
 
@@ -280,7 +285,7 @@ class TestRefstackClient(unittest.TestCase):
         """
         Test when a nonexistent Tempest directory is passed in.
         """
-        args = rc.parse_cli_args(self.mock_argv(tempest_dir='/does/not/exist'))
+        args = rc.parse_cli_args(self.mock_argv())
         client = rc.RefstackClient(args)
         self.assertRaises(SystemExit, client.test)
 
@@ -293,6 +298,7 @@ class TestRefstackClient(unittest.TestCase):
         self.mock_keystone()
         args = rc.parse_cli_args(self.mock_argv(verbose='-vv'))
         client = rc.RefstackClient(args)
+        client.tempest_dir = self.test_path
         client.logger.error = MagicMock()
         client.test()
         self.assertTrue(client.logger.error.called)
@@ -324,3 +330,63 @@ class TestRefstackClient(unittest.TestCase):
                                   '--url', 'http://api.test.org'])
         client = rc.RefstackClient(args)
         self.assertRaises(SystemExit, client.upload)
+
+    def _set_mocks_for_setup(self):
+        """
+        Setup mocks for testing setup command in positive case
+        """
+        env = dict()
+        env['args'] = rc.parse_cli_args(['setup', '-r', 'havana-eol',
+                                         '--tempest-dir', '/tmp/tempest'])
+        env['raw_input'] = self.patch(
+            'refstack_client.refstack_client.get_input',
+            return_value='yes'
+        )
+        env['exists'] = self.patch(
+            'refstack_client.refstack_client.os.path.exists',
+            return_value=True
+        )
+        env['rmtree'] = self.patch(
+            'refstack_client.refstack_client.shutil.rmtree',
+            return_value=True
+        )
+        env['test_commit_sha'] = '42'
+        env['tag'] = MagicMock(
+            **{'commit.hexsha': env['test_commit_sha']}
+        )
+        env['tag'].configure_mock(name='havana-eol')
+        env['git.reset'] = MagicMock()
+        env['repo'] = MagicMock(
+            tags=[env['tag']],
+            **{'git.reset': env['git.reset']}
+        )
+        self.patch(
+            'refstack_client.refstack_client.git.Repo.clone_from',
+            return_value=env['repo']
+        )
+        env['os.chdir'] = self.patch(
+            'refstack_client.refstack_client.os.chdir'
+        )
+        env['subprocess.check_output'] = self.patch(
+            'refstack_client.refstack_client.subprocess.check_output',
+            return_value='Ok!'
+        )
+        return env
+
+    def _check_mocks_for_setup(self, env):
+        """
+        Check mocks after successful run 'setup' command
+        """
+        env['exists'].assert_called_once_with('/tmp/tempest')
+        env['rmtree'].assert_called_once_with('/tmp/tempest')
+        env['git.reset'].assert_called_once_with(
+            env['test_commit_sha'], hard=True
+        )
+        env['os.chdir'].assert_has_calls([mock.call('/tmp/tempest'),
+                                          mock.call(os.getcwd())])
+        env['subprocess.check_output'].assert_has_calls([
+            mock.call(['virtualenv', '.venv'],
+                      stderr=subprocess.STDOUT),
+            mock.call(['.venv//bin//pip', 'install', '-r', 'requirements.txt'],
+                      stderr=subprocess.STDOUT)
+        ])

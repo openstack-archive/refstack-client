@@ -5,11 +5,15 @@ refstack-client is a command line utility that allows you to execute Tempest
 test runs based on configurations you specify.  When finished running Tempest
 it sends the passed test data back to the Refstack API server.
 
-**Setup**
+**Environment setup**
 
 We've created an "easy button" for Ubuntu, Centos, RHEL and openSuSe.
 
 $ ./setup_env
+
+**Options:**
+   a. -t option allows to specify tag in Tempest repository which will be
+   installed. By default, Tempest from last tag release will be used.
 
 **Usage**
 
@@ -36,7 +40,6 @@ $ ./setup_env
       Refstack API server instead of the default Refstack API server.
       server instead of the default Refstack API server.
    e. Adding --offline option will have your test results not be uploaded.
-
 
    **Upload:**
 

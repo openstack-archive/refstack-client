@@ -1,1 +1,3 @@
--e git+https://github.com/openstack/tempest.git#egg=tempest
+python-keystoneclient>=0.10.0
+gitpython>=0.3.2.RC1
+python-subunit>=0.0.18
