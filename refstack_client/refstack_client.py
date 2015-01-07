@@ -181,7 +181,7 @@ class RefstackClient:
         start_time = time.time()
 
         # Run the tempest script, specifying the conf file, the flag
-        # telling it to not use a virtual environment (-N), and the flag
+        # telling it to use a virtual environment (-V), and the flag
         # telling it to run the tests serially (-t).
         cmd = (self.tempest_script, '-C', self.conf_file, '-V', '-t')
 
@@ -204,7 +204,9 @@ class RefstackClient:
         process = subprocess.Popen(cmd, stderr=stderr)
         process.communicate()
 
-        if process.returncode == 0:
+        # If the subunit file was created, then the Tempest test was at least
+        # started successfully.
+        if os.path.isfile(results_file):
             end_time = time.time()
             elapsed = end_time - start_time
             duration = int(elapsed)
@@ -240,7 +242,7 @@ class RefstackClient:
 
 def parse_cli_args(args=None):
 
-    usage_string = ('refstack-client [-h] {upload,test,setup} ...\n\n'
+    usage_string = ('refstack-client [-h] <ARG> ...\n\n'
                     'To see help on specific argument, do:\n'
                     'refstack-client <ARG> -h')
 

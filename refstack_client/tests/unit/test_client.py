@@ -230,6 +230,7 @@ class TestRefstackClient(unittest.TestCase):
         mock_popen = self.patch(
             'refstack_client.refstack_client.subprocess.Popen',
             return_value=MagicMock(returncode=0))
+        self.patch("os.path.isfile", return_value=True)
         self.mock_keystone()
         client.get_passed_tests = MagicMock(return_value=['test'])
         client.post_results = MagicMock()
@@ -258,6 +259,7 @@ class TestRefstackClient(unittest.TestCase):
         mock_popen = self.patch(
             'refstack_client.refstack_client.subprocess.Popen',
             return_value=MagicMock(returncode=0))
+        self.patch("os.path.isfile", return_value=True)
         self.mock_keystone()
         client.get_passed_tests = MagicMock(return_value=['test'])
         client.post_results = MagicMock()
@@ -283,10 +285,11 @@ class TestRefstackClient(unittest.TestCase):
 
     def test_run_tempest_nonexisting_directory(self):
         """
-        Test when a nonexistent Tempest directory is passed in.
+        Test when the Tempest directory does not exist.
         """
         args = rc.parse_cli_args(self.mock_argv())
         client = rc.RefstackClient(args)
+        client.tempest_dir = "/does/not/exist"
         self.assertRaises(SystemExit, client.test)
 
     def test_failed_run(self):
@@ -323,7 +326,7 @@ class TestRefstackClient(unittest.TestCase):
 
     def test_upload_nonexisting_file(self):
         """
-        Test that the upload file does not exist
+        Test when the file to be uploaded does not exist.
         """
         upload_file_path = self.test_path + "/.testrepository/foo.json"
         args = rc.parse_cli_args(['upload', upload_file_path,
