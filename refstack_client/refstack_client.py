@@ -29,6 +29,7 @@ import ConfigParser
 import json
 import logging
 import os
+import requests
 import subprocess
 import time
 
@@ -93,7 +94,7 @@ class RefstackClient:
         if not os.path.isfile(self.args.file):
             self.logger.error("File not valid: %s" % self.args.file)
             exit(1)
-        self.logger.setLevel(logging.DEBUG)
+
         self.upload_file = self.args.file
 
     def _get_next_stream_subunit_output_file(self, tempest_dir):
@@ -164,11 +165,15 @@ class RefstackClient:
 
     def post_results(self, url, content):
         '''Post the combined results back to the server.'''
+        self.logger.debug('API request content: %s ' % content)
+        try:
+            url = '%s/v1/results/' % self.args.url
 
-        # TODO(cdiep): Post results once the API is available as outlined here:
-        # github.com/stackforge/refstack/blob/master/specs/approved/api-v1.md
-        json_content = json.dumps(content)
-        self.logger.debug('API request content: %s ' % json_content)
+            response = requests.post(url, data={'data': json.dumps(content)})
+            self.logger.info(url + " Response: " + str(response.text))
+        except Exception as e:
+            self.logger.critical('Failed to post %s - %s ' % (url, e))
+            raise
 
     def test(self):
         '''Execute Tempest test against the cloud.'''

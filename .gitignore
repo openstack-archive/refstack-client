@@ -8,3 +8,6 @@ cover/*
 .project
 .pydevproject
 build
+.tempest/
+.venv/
+
