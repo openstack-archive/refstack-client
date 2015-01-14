@@ -20,9 +20,11 @@ import os
 import tempfile
 import subprocess
 
+import httmock
 import mock
 from mock import MagicMock
 import unittest
+
 
 import refstack_client.refstack_client as rc
 
@@ -55,7 +57,7 @@ class TestRefstackClient(unittest.TestCase):
         argv = ['test',
                 '-c', conf_file_name,
                 '--test-cases', 'tempest.api.compute',
-                '--url', '0.0.0.0']
+                '--url', 'http://127.0.0.1']
         if verbose:
             argv.append(verbose)
         return argv
@@ -216,7 +218,7 @@ class TestRefstackClient(unittest.TestCase):
         client = rc.RefstackClient(args)
         subunit_file = self.test_path + "/.testrepository/0"
         results = client.get_passed_tests(subunit_file)
-        expected = ['tempest.passed.test']
+        expected = [{'name': 'tempest.passed.test'}]
         self.assertEqual(expected, results)
 
     def test_run_tempest(self):
@@ -232,20 +234,29 @@ class TestRefstackClient(unittest.TestCase):
             return_value=MagicMock(returncode=0))
         self.patch("os.path.isfile", return_value=True)
         self.mock_keystone()
-        client.get_passed_tests = MagicMock(return_value=['test'])
-        client.post_results = MagicMock()
+        client.get_passed_tests = MagicMock(return_value=[{'name': 'test'}])
+        client.logger.info = MagicMock()
         client._save_json_results = MagicMock()
-        client.test()
+
+        expected_content = json.dumps({'test_id': 42})
+
+        @httmock.urlmatch(netloc=r'(.*\.)?127.0.0.1$', path='/v1/results/')
+        def refstack_api_mock(url, request):
+            return expected_content
+
+        with httmock.HTTMock(refstack_api_mock):
+            client.test()
+
         mock_popen.assert_called_with(
             ('%s/run_tempest.sh' % self.test_path, '-C', self.conf_file_name,
              '-V', '-t', '--', 'tempest.api.compute'),
             stderr=None
         )
 
-        expected_content = {'duration_seconds': mock.ANY,
-                            'cpid': 'test-id',
-                            'results': ['test']}
-        client.post_results.assert_called_with('0.0.0.0', expected_content)
+        client.logger.info.assert_called_with(
+            'http://127.0.0.1/v1/results/ Response: '
+            '%s' % expected_content
+        )
 
     def test_run_tempest_offline(self):
         """
@@ -319,7 +330,7 @@ class TestRefstackClient(unittest.TestCase):
         client.upload()
         expected_json = {'duration_seconds': 0,
                          'cpid': 'test-id',
-                         'results': ['tempest.passed.test']}
+                         'results': [{'name': 'tempest.passed.test'}]}
 
         client.post_results.assert_called_with('http://api.test.org',
                                                expected_json)

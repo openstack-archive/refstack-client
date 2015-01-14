@@ -168,8 +168,11 @@ class RefstackClient:
         self.logger.debug('API request content: %s ' % content)
         try:
             url = '%s/v1/results/' % self.args.url
+            headers = {'Content-type': 'application/json'}
 
-            response = requests.post(url, data={'data': json.dumps(content)})
+            response = requests.post(url,
+                                     data=json.dumps(content),
+                                     headers=headers)
             self.logger.info(url + " Response: " + str(response.text))
         except Exception as e:
             self.logger.critical('Failed to post %s - %s ' % (url, e))
