@@ -34,9 +34,11 @@ class TempestSubunitTestResultPassOnly(testtools.TestResult):
     def addSuccess(self, testcase):
         """Overwrite super class method for additional data processing."""
         super(TempestSubunitTestResultPassOnly, self).addSuccess(testcase)
-        # Remove any [] and () from the test ID before appending it.
+        # Remove any [] from the test ID before appending it.
+        # Will leave in any () for now as they are the only thing discerning
+        # certain test cases.
         self.results.append(
-            {'name': re.sub('[\(\[].*[\]\)]', '', testcase.id())}
+            {'name': re.sub('\[.*\]', '', testcase.id())}
         )
 
     def get_results(self):
