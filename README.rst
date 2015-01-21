@@ -9,7 +9,10 @@ it sends the passed test data back to the Refstack API server.
 
 We've created an "easy button" for Ubuntu, Centos, RHEL and openSuSe.
 
-$ ./setup_env
+1. Make sure you have *git* installed
+2. Get the refstack client: `git clone https://github.com/stackforge/refstack-client`
+3. Go into the refstack-client directory: `cd refstack-client`
+4. Run the "easy button" setup: `./setup_env`
 
 **Options:**
    a. -t option allows to specify tag in Tempest repository which will be
