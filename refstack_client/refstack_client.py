@@ -271,10 +271,10 @@ def parse_cli_args(args=None):
     url_arg.add_argument('--url',
                          action='store',
                          required=False,
-                         default='https://api.refstack.org',
+                         default='http://api.refstack.net',
                          type=str,
                          help='Refstack API URL to upload results to '
-                              '(--url https://127.0.0.1:8000).')
+                              '(--url http://localhost:8000).')
 
     # Upload command
     parser_upload = subparsers.add_parser(
