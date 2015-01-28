@@ -230,9 +230,9 @@ class RefstackClient:
             self._save_json_results(content, json_path)
             self.logger.info('JSON results saved in: %s' % json_path)
 
-            # If the user did not specify the offline argument, then upload
+            # If the user specified the upload argument, then post
             # the results.
-            if not self.args.offline:
+            if self.args.upload:
                 content = self._form_result_content(cpid, duration, results)
                 self.post_results(self.args.url, content)
         else:
@@ -307,10 +307,12 @@ def parse_cli_args(args=None):
                              help='Specify a subset of test cases to run '
                                   '(e.g. --test-cases tempest.api.compute).')
 
-    parser_test.add_argument('--offline',
+    parser_test.add_argument('-u', '--upload',
                              action='store_true',
-                             help='Do not upload test results after running '
-                                  'Tempest.')
+                             required=False,
+                             help='After running Tempest, upload the test '
+                                  'results to the default Refstack API server '
+                                  'or the server specified by --url.')
     parser_test.set_defaults(func="test")
 
     return parser.parse_args(args=args)
