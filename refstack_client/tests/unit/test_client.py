@@ -221,6 +221,30 @@ class TestRefstackClient(unittest.TestCase):
         expected = [{'name': 'tempest.passed.test'}]
         self.assertEqual(expected, results)
 
+    def test_post_results(self):
+        """
+        Test the post_results method, ensuring a requests call is made.
+        """
+        args = rc.parse_cli_args(self.mock_argv())
+        client = rc.RefstackClient(args)
+        client.logger.info = MagicMock()
+        content = {'duration_seconds': 0,
+                   'cpid': 'test-id',
+                   'results': [{'name': 'tempest.passed.test'}]}
+        expected_response = json.dumps({'test_id': 42})
+
+        @httmock.urlmatch(netloc=r'(.*\.)?127.0.0.1$', path='/v1/results/')
+        def refstack_api_mock(url, request):
+            return expected_response
+
+        with httmock.HTTMock(refstack_api_mock):
+            client.post_results("http://127.0.0.1", content)
+
+        client.logger.info.assert_called_with(
+            'http://127.0.0.1/v1/results/ Response: '
+            '%s' % expected_response
+        )
+
     def test_run_tempest(self):
         """
         Test that the test command will run the tempest script using the
@@ -237,15 +261,8 @@ class TestRefstackClient(unittest.TestCase):
         client.get_passed_tests = MagicMock(return_value=[{'name': 'test'}])
         client.logger.info = MagicMock()
         client._save_json_results = MagicMock()
-
-        expected_content = json.dumps({'test_id': 42})
-
-        @httmock.urlmatch(netloc=r'(.*\.)?127.0.0.1$', path='/v1/results/')
-        def refstack_api_mock(url, request):
-            return expected_content
-
-        with httmock.HTTMock(refstack_api_mock):
-            client.test()
+        client.post_results = MagicMock()
+        client.test()
 
         mock_popen.assert_called_with(
             ('%s/run_tempest.sh' % self.test_path, '-C', self.conf_file_name,
@@ -253,17 +270,15 @@ class TestRefstackClient(unittest.TestCase):
             stderr=None
         )
 
-        client.logger.info.assert_called_with(
-            'http://127.0.0.1/v1/results/ Response: '
-            '%s' % expected_content
-        )
+        self.assertFalse(client.post_results.called)
 
-    def test_run_tempest_offline(self):
+    def test_run_tempest_upload(self):
         """
-        Test that the test command will run the tempest script in offline mode.
+        Test that the test command will run the tempest script and call
+        post_results when the --upload argument is passed in.
         """
         argv = self.mock_argv(verbose='-vv')
-        argv.append('--offline')
+        argv.append('--upload')
         args = rc.parse_cli_args(argv)
         client = rc.RefstackClient(args)
         client.tempest_dir = self.test_path
@@ -282,9 +297,7 @@ class TestRefstackClient(unittest.TestCase):
             stderr=None
         )
 
-        # The method post_results should not be called if --offline was
-        # specified.
-        self.assertFalse(client.post_results.called)
+        self.assertTrue(client.post_results.called)
 
     def test_run_tempest_no_conf_file(self):
         """

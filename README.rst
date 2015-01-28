@@ -40,14 +40,14 @@ We've created an "easy button" for Ubuntu, Centos, RHEL and openSuSe.
    c. Adding -t option will only test a particular test case or a test group.
       This option can be used for quick verification of the target test cases
       (i.e. -t "tempest.api.identity.admin.test_roles").
-   d. Adding --url option will upload the test results to the specified
-      Refstack API server instead of the default Refstack API server.
-      server instead of the default Refstack API server.
-   e. Adding --offline option will have your test results not be uploaded.
+   d. Adding --upload option will have your test results be uploaded to the
+      default Refstack API server or the server specified by --url.
+   e. Adding --url option will allow you to change where test results should
+      be uploaded.
 
    **Upload:**
 
-   If you previously ran a test with refstack-client using the --offline
+   If you previously ran a test with refstack-client without the --upload
    option, you can upload your results to a Refstack API server by using the
    following command:
 
