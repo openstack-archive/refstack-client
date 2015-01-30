@@ -57,3 +57,17 @@ We've created an "easy button" for Ubuntu, Centos, RHEL and openSuSe.
    completed. This is saved in .tempest/.testrepository. When you use the
    'upload' command, you can also override the Refstack API server uploaded to
    with the --url option.
+
+**Tempest Hacking**
+
+By default, refstack-client installs Tempest into the `.tempest` directory.
+If you're interested in working with Tempest directly for debugging or
+configuration, you can activate a working Tempest environment by
+switching to that directory and using the installed dependencies.
+
+1. `cd .tempest`
+2. run tempest with `./run_tempest.sh -V ` or `source ./.venv/bin/activate`
+   and run tests manually with `testr`.
+
+This will make the entire Tempest environment available for you to run,
+including the `run_tempest` script and `testr`.
