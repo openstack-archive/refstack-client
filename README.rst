@@ -23,16 +23,23 @@ We've created an "easy button" for Ubuntu, Centos, RHEL and openSuSe.
 
 1. Prepare a tempest configuration file that is customized to your cloud
    environment.
-2. Change the directory to the refstack-client directory
-   (i.e. cd ~/refstack-client).
+2. Go into the refstack-client directory.
+
+   `cd ~/refstack-client`
+
 3. Source to use the correct Python environment.
 
-   source .venv/bin/activate
+   `source .venv/bin/activate`
 
-4. Test your cloud by typing:
+4. Validate your setup by running a short test.
 
-   ./refstack-client test -c <Path of the tempest configuration file to use>
+   `./refstack-client test -c <Path of the tempest configuration file to use>`
+                   `-vv -t "tempest.api.identity.admin.test_roles"`
 
+5. Run a full API test set.
+
+   `./refstack-client test -c <Path of the tempest configuration file to use> -vv`
+ 
    **Note:**
 
    a. Adding -v option will show the summary output.
@@ -71,3 +78,5 @@ switching to that directory and using the installed dependencies.
 
 This will make the entire Tempest environment available for you to run,
 including the `run_tempest` script and `testr`.
+
+
