@@ -67,7 +67,11 @@ if [ -d "${WORKDIR}/.tempest" ]; then
 fi
 git clone https://github.com/openstack/tempest.git ${WORKDIR}/.tempest
 cd ${WORKDIR}/.tempest
-TAG="$(git describe --abbrev=0 --tags)"
+
+#TAG="$(git describe --abbrev=0 --tags)"
+#Default to pull tag 3 until the next OpenStack release.
+TAG=3
+
 while getopts t:h FLAG; do
     case ${FLAG} in
         t)
