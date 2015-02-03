@@ -226,6 +226,13 @@ class RefstackClient:
             self.logger.info("Number of passed tests: %d" % len(results))
 
             content = self._form_result_content(cpid, duration, results)
+
+            if self.args.result_tag:
+                file_name = os.path.basename(results_file)
+                directory = os.path.dirname(results_file)
+                file_name = '-'.join([self.args.result_tag, file_name])
+                results_file = os.path.join(directory, file_name)
+
             json_path = results_file + ".json"
             self._save_json_results(content, json_path)
             self.logger.info('JSON results saved in: %s' % json_path)
@@ -233,7 +240,6 @@ class RefstackClient:
             # If the user specified the upload argument, then post
             # the results.
             if self.args.upload:
-                content = self._form_result_content(cpid, duration, results)
                 self.post_results(self.args.url, content)
         else:
             self.logger.error("Problem executing Tempest script. Exit code %d",
@@ -298,6 +304,14 @@ def parse_cli_args(args=None):
                              type=str,
                              help='Path of the Tempest configuration file to '
                                   'use.')
+
+    parser_test.add_argument('-r', '--result-file-tag',
+                             action='store',
+                             required=False,
+                             dest='result_tag',
+                             type=str,
+                             help='Specify a string to prefix the result '
+                                  'file with to easier distinguish them. ')
 
     parser_test.add_argument('-t', '--test-cases',
                              action='store',

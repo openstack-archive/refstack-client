@@ -316,6 +316,37 @@ class TestRefstackClient(unittest.TestCase):
         client.tempest_dir = "/does/not/exist"
         self.assertRaises(SystemExit, client.test)
 
+    def test_run_tempest_result_tag(self):
+        """
+        Check that the result JSON file is renamed with the result file tag
+        when the --result-file-tag argument is passed in.
+        """
+        argv = self.mock_argv(verbose='-vv')
+        argv.extend(['--result-file-tag', 'my-test'])
+        args = rc.parse_cli_args(argv)
+        client = rc.RefstackClient(args)
+        client.tempest_dir = self.test_path
+        mock_popen = self.patch(
+            'refstack_client.refstack_client.subprocess.Popen',
+            return_value=MagicMock(returncode=0))
+        self.patch("os.path.isfile", return_value=True)
+        self.mock_keystone()
+        client.get_passed_tests = MagicMock(return_value=['test'])
+        client._save_json_results = MagicMock()
+        client.test()
+
+        mock_popen.assert_called_with(
+            ('%s/run_tempest.sh' % self.test_path, '-C', self.conf_file_name,
+             '-V', '-t', '--', 'tempest.api.compute'),
+            stderr=None
+        )
+
+        directory = os.path.dirname(os.path.realpath(__file__))
+        # Since '1' is in the next-stream file, we expect the JSON output file
+        # to be 'my-test-1.json'.
+        expected_file = directory + "/.testrepository/my-test-1.json"
+        client._save_json_results.assert_called_with(mock.ANY, expected_file)
+
     def test_failed_run(self):
         """
         Test when the Tempest script returns a non-zero exit code.

@@ -51,6 +51,9 @@ We've created an "easy button" for Ubuntu, Centos, RHEL and openSuSe.
       default Refstack API server or the server specified by --url.
    e. Adding --url option will allow you to change where test results should
       be uploaded.
+   f. Adding -r option with a string will prefix the JSON result file with the
+      given string (e.g. '-r my-test' will yield a result file like
+      'my-test-0.json').
 
    **Upload:**
 
