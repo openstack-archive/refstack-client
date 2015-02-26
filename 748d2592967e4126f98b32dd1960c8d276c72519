@@ -1,0 +1,8 @@
+Verified+2: Jenkins
+Code-Review+2: Sergey Slipushenko <sslypushenko@mirantis.com>
+Workflow+1: Sergey Slipushenko <sslypushenko@mirantis.com>
+Submitted-by: Jenkins
+Submitted-at: Thu, 26 Feb 2015 14:01:45 +0000
+Reviewed-on: https://review.openstack.org/153734
+Project: stackforge/refstack-client
+Branch: refs/heads/master
