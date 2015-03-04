@@ -2,7 +2,8 @@
     "duration_seconds": 0,
     "cpid": "test-id",
     "results": [
-        {"name": "tempest.passed.test"}
+        {"name": "tempest.passed.test"},
+        {"name": "tempest.tagged_passed.test",
+         "uuid": "0146f675-ffbd-4208-b3a4-60eb628dbc5e"}
     ]
 }
-

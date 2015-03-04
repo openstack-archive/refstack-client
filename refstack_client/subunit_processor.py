@@ -31,15 +31,30 @@ class TempestSubunitTestResultPassOnly(testtools.TestResult):
         super(TempestSubunitTestResultPassOnly, self).__init__()
         self.results = []
 
+    @staticmethod
+    def get_test_uuid(test):
+        attrs = None
+        try:
+            attrs = test.split('[')[1].split(']')[0].split(',')
+        except IndexError:
+            pass
+        if not attrs:
+            return
+        for attr in attrs:
+            if attr.startswith('id-'):
+                return '-'.join(attr.split('-')[1:])
+
     def addSuccess(self, testcase):
         """Overwrite super class method for additional data processing."""
         super(TempestSubunitTestResultPassOnly, self).addSuccess(testcase)
         # Remove any [] from the test ID before appending it.
         # Will leave in any () for now as they are the only thing discerning
         # certain test cases.
-        self.results.append(
-            {'name': re.sub('\[.*\]', '', testcase.id())}
-        )
+        test_result = {'name': str(re.sub('\[.*\]', '', testcase.id()))}
+        uuid = self.get_test_uuid(str(testcase.id()))
+        if uuid:
+            test_result['uuid'] = uuid
+        self.results.append(test_result)
 
     def get_results(self):
         return self.results
