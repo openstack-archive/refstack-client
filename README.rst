@@ -68,6 +68,14 @@ We've created an "easy button" for Ubuntu, Centos, RHEL and openSuSe.
    'upload' command, you can also override the Refstack API server uploaded to
    with the --url option.
 
+   **Note:**
+
+   a. Adding -i <path-to-private-key> option will upload test result with
+      digital signature. For signing refstack-client uses private RSA key.
+      OpenSSH format of rsa keys  supported, so you can just use your ssh key
+      '~/.ssh/id-rsa' or generate a new one with 'ssh-keygen -b 4096'.
+      For now, signed test results can be considereded as private.
+
 **Tempest Hacking**
 
 By default, refstack-client installs Tempest into the `.tempest` directory.

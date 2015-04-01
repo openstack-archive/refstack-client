@@ -25,6 +25,7 @@ Tempest configuration file.
 """
 
 import argparse
+import binascii
 import ConfigParser
 import json
 import logging
@@ -33,8 +34,10 @@ import requests
 import subprocess
 import time
 
+from Crypto.Hash import SHA256
+from Crypto.PublicKey import RSA
+from Crypto.Signature import PKCS1_v1_5
 from keystoneclient.v2_0 import client as ksclient
-
 from subunit_processor import SubunitProcessor
 
 
@@ -163,20 +166,36 @@ class RefstackClient:
         results = subunit_processor.process_stream()
         return results
 
-    def post_results(self, url, content):
+    def post_results(self, url, content, sign_with=None):
         '''Post the combined results back to the server.'''
+        endpoint = '%s/v1/results/' % url
+        headers = {'Content-type': 'application/json'}
+        data = json.dumps(content)
         self.logger.debug('API request content: %s ' % content)
+        if sign_with:
+            data_hash = SHA256.new()
+            data_hash.update(data.encode('utf-8'))
+            with open(sign_with) as key_pair_file:
+                try:
+                    key = RSA.importKey(key_pair_file.read())
+                except (IOError, ValueError) as e:
+                    self.logger.info('Error during upload key pair %s'
+                                     '' % key_pair_file)
+                    self.logger.exception(e)
+                    return
+            signer = PKCS1_v1_5.new(key)
+            sign = signer.sign(data_hash)
+            headers['X-Signature'] = binascii.b2a_hex(sign)
+            headers['X-Public-Key'] = key.publickey().exportKey('OpenSSH')
         try:
-            url = '%s/v1/results/' % self.args.url
-            headers = {'Content-type': 'application/json'}
-
-            response = requests.post(url,
-                                     data=json.dumps(content),
+            response = requests.post(endpoint,
+                                     data=data,
                                      headers=headers)
-            self.logger.info(url + " Response: " + str(response.text))
+            self.logger.info(endpoint + " Response: " + str(response.text))
         except Exception as e:
-            self.logger.critical('Failed to post %s - %s ' % (url, e))
-            raise
+            self.logger.info('Failed to post %s - %s ' % (endpoint, e))
+            self.logger.exception(e)
+            return
 
     def test(self):
         '''Execute Tempest test against the cloud.'''
@@ -240,7 +259,8 @@ class RefstackClient:
             # If the user specified the upload argument, then post
             # the results.
             if self.args.upload:
-                self.post_results(self.args.url, content)
+                self.post_results(self.args.url, content,
+                                  sign_with=self.args.priv_key)
         else:
             self.logger.error("Problem executing Tempest script. Exit code %d",
                               process.returncode)
@@ -251,7 +271,8 @@ class RefstackClient:
         json_file = open(self.upload_file)
         json_data = json.load(json_file)
         json_file.close()
-        self.post_results(self.args.url, json_data)
+        self.post_results(self.args.url, json_data,
+                          sign_with=self.args.priv_key)
 
 
 def parse_cli_args(args=None):
@@ -273,28 +294,37 @@ def parse_cli_args(args=None):
                              action='count',
                              help='Show verbose output.')
 
-    url_arg = argparse.ArgumentParser(add_help=False)
-    url_arg.add_argument('--url',
-                         action='store',
-                         required=False,
-                         default='http://api.refstack.net',
-                         type=str,
-                         help='Refstack API URL to upload results to '
-                              '(--url http://localhost:8000).')
+    shared_args.add_argument('--url',
+                             action='store',
+                             required=False,
+                             default='http://api.refstack.net',
+                             type=str,
+                             help='Refstack API URL to upload results to '
+                                  '(--url http://localhost:8000).')
+
+    shared_args.add_argument('-i', '--sign',
+                             type=str,
+                             required=False,
+                             dest='priv_key',
+                             help='Private RSA key. '
+                                  'OpenSSH RSA keys format supported ('
+                                  '-i ~/.ssh/id-rsa)')
 
     # Upload command
     parser_upload = subparsers.add_parser(
-        'upload', parents=[shared_args, url_arg],
+        'upload', parents=[shared_args],
         help='Upload an existing result file.'
     )
+
     parser_upload.add_argument('file',
                                type=str,
                                help='Path of JSON results file.')
+
     parser_upload.set_defaults(func="upload")
 
     # Test command
     parser_test = subparsers.add_parser(
-        'test', parents=[shared_args, url_arg],
+        'test', parents=[shared_args],
         help='Run Tempest against a cloud.')
 
     parser_test.add_argument('-c', '--conf-file',

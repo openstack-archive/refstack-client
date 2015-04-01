@@ -45,7 +45,7 @@ class TestRefstackClient(unittest.TestCase):
         self.addCleanup(patcher.stop)
         return thing
 
-    def mock_argv(self, conf_file_name=None, verbose=None):
+    def mock_argv(self, conf_file_name=None, verbose=None, priv_key=None):
         """
         Build argv for test.
         :param conf_file_name: Configuration file name
@@ -58,6 +58,8 @@ class TestRefstackClient(unittest.TestCase):
                 '-c', conf_file_name,
                 '--test-cases', 'tempest.api.compute',
                 '--url', 'http://127.0.0.1']
+        if priv_key:
+            argv.extend(('-i', priv_key))
         if verbose:
             argv.append(verbose)
         return argv
@@ -245,6 +247,30 @@ class TestRefstackClient(unittest.TestCase):
             '%s' % expected_response
         )
 
+    def test_post_results_with_sign(self):
+        """
+        Test the post_results method, ensuring a requests call is made.
+        """
+        args = rc.parse_cli_args(self.mock_argv(priv_key='rsa_key'))
+        client = rc.RefstackClient(args)
+        client.logger.info = MagicMock()
+        content = {'duration_seconds': 0,
+                   'cpid': 'test-id',
+                   'results': [{'name': 'tempest.passed.test'}]}
+        expected_response = json.dumps({'test_id': 42})
+
+        @httmock.urlmatch(netloc=r'(.*\.)?127.0.0.1$', path='/v1/results/')
+        def refstack_api_mock(url, request):
+            return expected_response
+
+        with httmock.HTTMock(refstack_api_mock):
+            client.post_results("http://127.0.0.1", content,
+                                sign_with=self.test_path + '/rsa_key')
+        client.logger.info.assert_called_with(
+            'http://127.0.0.1/v1/results/ Response: '
+            '%s' % expected_response
+        )
+
     def test_run_tempest(self):
         """
         Test that the test command will run the tempest script using the
@@ -298,6 +324,40 @@ class TestRefstackClient(unittest.TestCase):
         )
 
         self.assertTrue(client.post_results.called)
+
+    def test_run_tempest_upload_with_sign(self):
+        """
+        Test that the test command will run the tempest script and call
+        post_results when the --upload argument is passed in.
+        """
+        argv = self.mock_argv(verbose='-vv', priv_key='rsa_key')
+        argv.append('--upload')
+        args = rc.parse_cli_args(argv)
+        client = rc.RefstackClient(args)
+        client.tempest_dir = self.test_path
+        mock_popen = self.patch(
+            'refstack_client.refstack_client.subprocess.Popen',
+            return_value=MagicMock(returncode=0))
+        self.patch("os.path.isfile", return_value=True)
+        self.mock_keystone()
+        client.get_passed_tests = MagicMock(return_value=['test'])
+        client.post_results = MagicMock()
+        client._save_json_results = MagicMock()
+        client.test()
+        mock_popen.assert_called_with(
+            ('%s/run_tempest.sh' % self.test_path, '-C', self.conf_file_name,
+             '-V', '-t', '--', 'tempest.api.compute'),
+            stderr=None
+        )
+
+        self.assertTrue(client.post_results.called)
+        client.post_results.assert_called_with(
+            'http://127.0.0.1',
+            {'duration_seconds': 0,
+             'cpid': 'test-id',
+             'results': ['test']},
+            sign_with='rsa_key'
+        )
 
     def test_run_tempest_no_conf_file(self):
         """
@@ -377,7 +437,8 @@ class TestRefstackClient(unittest.TestCase):
                          'results': [{'name': 'tempest.passed.test'}]}
 
         client.post_results.assert_called_with('http://api.test.org',
-                                               expected_json)
+                                               expected_json,
+                                               sign_with=None)
 
     def test_upload_nonexisting_file(self):
         """
