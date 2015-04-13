@@ -16,8 +16,12 @@ We've created an "easy button" for Ubuntu, Centos, RHEL and openSuSe.
 
    **Options:**
 
-   a. -t option allows to specify tag in Tempest repository which will be
-   installed. By default, Tempest from last tag release will be used.
+   a. -c option allows to specify SHA of commit or branch in Tempest repository
+   which will be installed.
+   b. -t option allows to specify tag in Tempest repository
+   which will be installed.
+   c. By default, Tempest will be installed from commit
+   7c8fcc67343fc6e968213fddadb8e0e1ea58cbcb (10 Apr 2015).
 
 **Usage**
 
