@@ -220,7 +220,11 @@ class TestRefstackClient(unittest.TestCase):
         client = rc.RefstackClient(args)
         subunit_file = self.test_path + "/.testrepository/0"
         results = client.get_passed_tests(subunit_file)
-        expected = [{'name': 'tempest.passed.test'}]
+        expected = [
+            {'name': 'tempest.passed.test'},
+            {'name': 'tempest.tagged_passed.test',
+             'uuid': '0146f675-ffbd-4208-b3a4-60eb628dbc5e'}
+        ]
         self.assertEqual(expected, results)
 
     def test_post_results(self):
@@ -232,7 +236,7 @@ class TestRefstackClient(unittest.TestCase):
         client.logger.info = MagicMock()
         content = {'duration_seconds': 0,
                    'cpid': 'test-id',
-                   'results': [{'name': 'tempest.passed.test'}]}
+                   'results': [{'name': 'tempest.passed.test', 'uid': None}]}
         expected_response = json.dumps({'test_id': 42})
 
         @httmock.urlmatch(netloc=r'(.*\.)?127.0.0.1$', path='/v1/results/')
@@ -432,10 +436,15 @@ class TestRefstackClient(unittest.TestCase):
 
         client.post_results = MagicMock()
         client.upload()
-        expected_json = {'duration_seconds': 0,
-                         'cpid': 'test-id',
-                         'results': [{'name': 'tempest.passed.test'}]}
-
+        expected_json = {
+            'duration_seconds': 0,
+            'cpid': 'test-id',
+            'results': [
+                {'name': 'tempest.passed.test'},
+                {'name': 'tempest.tagged_passed.test',
+                 'uuid': '0146f675-ffbd-4208-b3a4-60eb628dbc5e'}
+            ]
+        }
         client.post_results.assert_called_with('http://api.test.org',
                                                expected_json,
                                                sign_with=None)

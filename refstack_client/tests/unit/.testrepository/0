@@ -4,20 +4,13 @@ test: tempest.passed.test
 time: 2014-08-15 10:34:51.020584Z
 successful: tempest.passed.test [ multipart
 ]
-tags: -worker-0
-time: 2014-08-15 10:34:57.543400Z
 tags: worker-0
-test: tempest.failed.test
-time: 2014-08-15 10:34:57.548225Z
-failure: tempest.failed.test [ multipart
-Content-Type: text/x-traceback;charset="utf8",language="python"
-traceback
-2E4
-Traceback (most recent call last):
-  File "/usr/lib/python2.7/some_file.py", line 2335, in exit
-    _sys.exit(status)
-SystemExit: 2
-0
+time: 2014-08-15 10:34:58.010492Z
+tags: worker-0
+test: tempest.tagged_passed.test[gate,id-0146f675-ffbd-4208-b3a4-60eb628dbc5e]
+time: 2014-08-15 10:34:58.020584Z
+successful: tempest.tagged_passed.test[gate,id-0146f675-ffbd-4208-b3a4-60eb628dbc5e] [ multipart
 ]
 tags: -worker-0
-
+time: 2014-08-15 10:34:58.543400Z
+tags: worker-0
