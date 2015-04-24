@@ -27,10 +27,10 @@ Tempest configuration file.
 import argparse
 import binascii
 import ConfigParser
+import itertools
 import json
 import logging
 import os
-import requests
 import subprocess
 import time
 
@@ -38,6 +38,9 @@ from Crypto.Hash import SHA256
 from Crypto.PublicKey import RSA
 from Crypto.Signature import PKCS1_v1_5
 from keystoneclient.v2_0 import client as ksclient
+import requests
+import requests.exceptions
+import six.moves
 from subunit_processor import SubunitProcessor
 
 
@@ -197,6 +200,10 @@ class RefstackClient:
             self.logger.exception(e)
             return
 
+        if response.status_code == 201:
+            resp = response.json()
+            print 'Test results uploaded!\nURL: %s' % resp.get('url', '')
+
     def test(self):
         '''Execute Tempest test against the cloud.'''
         self._prep_test()
@@ -273,6 +280,41 @@ class RefstackClient:
         json_file.close()
         self.post_results(self.args.url, json_data,
                           sign_with=self.args.priv_key)
+
+    def yield_results(self, url, start_page=1,
+                      start_date='', end_date='', cpid=''):
+        endpoint = '%s/v1/results/' % url
+        headers = {'Content-type': 'application/json'}
+        for page in itertools.count(start_page):
+            params = {'page': page}
+            for param in ('start_date', 'end_date', 'cpid'):
+                if locals()[param]:
+                    params.update({param: locals()[param]})
+            try:
+                resp = requests.get(endpoint, headers=headers, params=params)
+                resp.raise_for_status()
+            except requests.exceptions.HTTPError as e:
+                self.logger.info('Failed to list %s - %s ' % (endpoint, e))
+                raise StopIteration
+            else:
+                resp = resp.json()
+                results = resp.get('results', [])
+                yield results
+                if resp['pagination']['total_pages'] == page:
+                    raise StopIteration
+
+    def list(self):
+        """Retrieve list with last test results from Refstack."""
+        results = self.yield_results(self.args.url,
+                                     start_date=self.args.start_date,
+                                     end_date=self.args.end_date)
+        for page_of_results in results:
+            for r in page_of_results:
+                print('%s - %s' % (r['created_at'], r['url']))
+            try:
+                six.moves.input('Press Enter to go to next page...')
+            except KeyboardInterrupt:
+                return
 
 
 def parse_cli_args(args=None):
@@ -358,5 +400,25 @@ def parse_cli_args(args=None):
                                   'results to the default Refstack API server '
                                   'or the server specified by --url.')
     parser_test.set_defaults(func="test")
+
+    # List command
+    parser_list = subparsers.add_parser(
+        'list', parents=[shared_args],
+        help='List last results from Refstack')
+    parser_list.add_argument('--start-date',
+                             required=False,
+                             dest='start_date',
+                             type=str,
+                             help='Specify a date for start listing of '
+                                  'test results '
+                                  '(e.g. --start-date "2015-04-24 01:23:56").')
+    parser_list.add_argument('--end-date',
+                             required=False,
+                             dest='end_date',
+                             type=str,
+                             help='Specify a date for end listing of '
+                                  'test results '
+                                  '(e.g. --end-date "2015-04-24 01:23:56").')
+    parser_list.set_defaults(func='list')
 
     return parser.parse_args(args=args)

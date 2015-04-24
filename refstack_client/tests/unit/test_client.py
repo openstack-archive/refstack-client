@@ -14,11 +14,10 @@
 #    under the License.
 #
 
-import logging
 import json
+import logging
 import os
 import tempfile
-import subprocess
 
 import httmock
 import mock
@@ -45,23 +44,25 @@ class TestRefstackClient(unittest.TestCase):
         self.addCleanup(patcher.stop)
         return thing
 
-    def mock_argv(self, conf_file_name=None, verbose=None, priv_key=None):
+    def mock_argv(self, command='test', **kwargs):
         """
         Build argv for test.
         :param conf_file_name: Configuration file name
         :param verbose: verbosity level
         :return: argv
         """
-        if conf_file_name is None:
-            conf_file_name = self.conf_file_name
-        argv = ['test',
-                '-c', conf_file_name,
-                '--test-cases', 'tempest.api.compute',
+        argv = [command,
                 '--url', 'http://127.0.0.1']
-        if priv_key:
-            argv.extend(('-i', priv_key))
-        if verbose:
-            argv.append(verbose)
+        if command == 'test':
+            argv.extend(
+                ('-c', kwargs.get('conf_file_name', self.conf_file_name)))
+            if kwargs.get('test_cases', None):
+                argv.extend(('--test-cases', kwargs.get('test_cases', None)))
+
+        if kwargs.get('priv_key', None):
+            argv.extend(('-i', kwargs.get('priv_key', None)))
+        if kwargs.get('verbose', None):
+            argv.append(kwargs.get('verbose', None))
         return argv
 
     def mock_keystone(self):
@@ -280,7 +281,8 @@ class TestRefstackClient(unittest.TestCase):
         Test that the test command will run the tempest script using the
         default configuration.
         """
-        args = rc.parse_cli_args(self.mock_argv(verbose='-vv'))
+        args = rc.parse_cli_args(
+            self.mock_argv(verbose='-vv', test_cases='tempest.api.compute'))
         client = rc.RefstackClient(args)
         client.tempest_dir = self.test_path
         mock_popen = self.patch(
@@ -307,7 +309,8 @@ class TestRefstackClient(unittest.TestCase):
         Test that the test command will run the tempest script and call
         post_results when the --upload argument is passed in.
         """
-        argv = self.mock_argv(verbose='-vv')
+        argv = self.mock_argv(verbose='-vv',
+                              test_cases='tempest.api.compute')
         argv.append('--upload')
         args = rc.parse_cli_args(argv)
         client = rc.RefstackClient(args)
@@ -334,7 +337,8 @@ class TestRefstackClient(unittest.TestCase):
         Test that the test command will run the tempest script and call
         post_results when the --upload argument is passed in.
         """
-        argv = self.mock_argv(verbose='-vv', priv_key='rsa_key')
+        argv = self.mock_argv(verbose='-vv', priv_key='rsa_key',
+                              test_cases='tempest.api.compute')
         argv.append('--upload')
         args = rc.parse_cli_args(argv)
         client = rc.RefstackClient(args)
@@ -385,7 +389,8 @@ class TestRefstackClient(unittest.TestCase):
         Check that the result JSON file is renamed with the result file tag
         when the --result-file-tag argument is passed in.
         """
-        argv = self.mock_argv(verbose='-vv')
+        argv = self.mock_argv(verbose='-vv',
+                              test_cases='tempest.api.compute')
         argv.extend(['--result-file-tag', 'my-test'])
         args = rc.parse_cli_args(argv)
         client = rc.RefstackClient(args)
@@ -459,62 +464,55 @@ class TestRefstackClient(unittest.TestCase):
         client = rc.RefstackClient(args)
         self.assertRaises(SystemExit, client.upload)
 
-    def _set_mocks_for_setup(self):
+    def test_yeild_results(self):
         """
-        Setup mocks for testing setup command in positive case
+        Test the post_results method, ensuring a requests call is made.
         """
-        env = dict()
-        env['args'] = rc.parse_cli_args(['setup', '-r', 'havana-eol',
-                                         '--tempest-dir', '/tmp/tempest'])
-        env['raw_input'] = self.patch(
-            'refstack_client.refstack_client.get_input',
-            return_value='yes'
-        )
-        env['exists'] = self.patch(
-            'refstack_client.refstack_client.os.path.exists',
-            return_value=True
-        )
-        env['rmtree'] = self.patch(
-            'refstack_client.refstack_client.shutil.rmtree',
-            return_value=True
-        )
-        env['test_commit_sha'] = '42'
-        env['tag'] = MagicMock(
-            **{'commit.hexsha': env['test_commit_sha']}
-        )
-        env['tag'].configure_mock(name='havana-eol')
-        env['git.reset'] = MagicMock()
-        env['repo'] = MagicMock(
-            tags=[env['tag']],
-            **{'git.reset': env['git.reset']}
-        )
-        self.patch(
-            'refstack_client.refstack_client.git.Repo.clone_from',
-            return_value=env['repo']
-        )
-        env['os.chdir'] = self.patch(
-            'refstack_client.refstack_client.os.chdir'
-        )
-        env['subprocess.check_output'] = self.patch(
-            'refstack_client.refstack_client.subprocess.check_output',
-            return_value='Ok!'
-        )
-        return env
+        args = rc.parse_cli_args(self.mock_argv(command='list'))
+        client = rc.RefstackClient(args)
+        expected_response = {
+            "pagination": {
+                "current_page": 1,
+                "total_pages": 1
+            },
+            "results": [
+                {
+                    "cpid": "42",
+                    "created_at": "2015-04-28 13:57:05",
+                    "test_id": "1",
+                    "url": "http://127.0.0.1:8000/output.html?test_id=1"
+                },
+                {
+                    "cpid": "42",
+                    "created_at": "2015-04-28 13:57:05",
+                    "test_id": "2",
+                    "url": "http://127.0.0.1:8000/output.html?test_id=2"
+                }]}
 
-    def _check_mocks_for_setup(self, env):
-        """
-        Check mocks after successful run 'setup' command
-        """
-        env['exists'].assert_called_once_with('/tmp/tempest')
-        env['rmtree'].assert_called_once_with('/tmp/tempest')
-        env['git.reset'].assert_called_once_with(
-            env['test_commit_sha'], hard=True
-        )
-        env['os.chdir'].assert_has_calls([mock.call('/tmp/tempest'),
-                                          mock.call(os.getcwd())])
-        env['subprocess.check_output'].assert_has_calls([
-            mock.call(['virtualenv', '.venv'],
-                      stderr=subprocess.STDOUT),
-            mock.call(['.venv//bin//pip', 'install', '-r', 'requirements.txt'],
-                      stderr=subprocess.STDOUT)
-        ])
+        @httmock.urlmatch(netloc=r'(.*\.)?127.0.0.1$', path='/v1/results/')
+        def refstack_api_mock(url, request):
+            return json.dumps(expected_response)
+
+        with httmock.HTTMock(refstack_api_mock):
+            results = client.yield_results("http://127.0.0.1")
+            self.assertEqual(expected_response['results'], next(results))
+            self.assertRaises(StopIteration, next, results)
+
+    @mock.patch('six.moves.input', side_effect=KeyboardInterrupt)
+    @mock.patch('sys.stdout', new_callable=MagicMock)
+    def test_list(self, mock_stdout, mock_input):
+        args = rc.parse_cli_args(self.mock_argv(command='list'))
+        client = rc.RefstackClient(args)
+        results = [[{"cpid": "42",
+                    "created_at": "2015-04-28 13:57:05",
+                    "test_id": "1",
+                    "url": "http://127.0.0.1:8000/output.html?test_id=1"},
+                   {"cpid": "42",
+                    "created_at": "2015-04-28 13:57:05",
+                    "test_id": "2",
+                    "url": "http://127.0.0.1:8000/output.html?test_id=2"}]]
+        mock_results = MagicMock()
+        mock_results.__iter__.return_value = results
+        client.yield_results = MagicMock(return_value=mock_results)
+        client.list()
+        self.assertTrue(mock_stdout.write.called)
