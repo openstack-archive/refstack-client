@@ -39,26 +39,29 @@ We've created an "easy button" for Ubuntu, Centos, RHEL and openSuSe.
 
 4. Validate your setup by running a short test.
 
-   `./refstack-client test -c <Path of the tempest configuration file to use>`
-                  `-vv -t "tempest.api.identity.admin.v2.test_roles"`
+   `./refstack-client test -c <Path of the tempest configuration file to use> -vv -t "tempest.api.identity.admin.v2.test_roles"`
 
     or
 
-   `./refstack-client test -c <Path of the tempest configuration file to use>`
-                   `-vv -t "tempest.api.identity.v2.test_token"`
+   `./refstack-client test -c <Path of the tempest configuration file to use> -vv -t "tempest.api.identity.v2.test_token"`
 
 
 5. Run a full API test set.
 
    `./refstack-client test -c <Path of the tempest configuration file to use> -vv`
- 
+
    **Note:**
 
    a. Adding -v option will show the summary output.
    b. Adding -vv option will show the Tempest test result output.
    c. Adding -t option will only test a particular test case or a test group.
-      This option can be used for quick verification of the target test cases
-      (i.e. -t "tempest.api.identity.admin.test_roles").
+      This option can be used for quick verification of the target test cases.
+      For example:
+
+      `-t "tempest.api.identity.v2.test_token"`
+
+      `-t "--load-list /tmp/test-list.txt"`
+
    d. Adding --upload option will have your test results be uploaded to the
       default Refstack API server or the server specified by --url.
    e. Adding --url option will allow you to change where test results should
