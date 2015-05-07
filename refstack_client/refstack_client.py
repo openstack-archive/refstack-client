@@ -163,6 +163,17 @@ class RefstackClient:
         file.write(json.dumps(results, indent=4, separators=(',', ': ')))
         file.close()
 
+    def _user_query(self, q):
+        """Ask user a query. Return true if user agreed (yes/y)"""
+        if self.args.quiet:
+            return True
+        try:
+            inp = six.moves.input(q + ' (yes/y): ')
+        except KeyboardInterrupt:
+            return
+        else:
+            return inp.lower() in ('yes', 'y')
+
     def get_passed_tests(self, result_file):
         '''Get a list of tests IDs that passed Tempest from a subunit file.'''
         subunit_processor = SubunitProcessor(result_file)
@@ -278,8 +289,10 @@ class RefstackClient:
         json_file = open(self.upload_file)
         json_data = json.load(json_file)
         json_file.close()
-        self.post_results(self.args.url, json_data,
-                          sign_with=self.args.priv_key)
+        if self._user_query('Test results will be uploaded to %s. '
+                            'Ok?' % self.args.url):
+            self.post_results(self.args.url, json_data,
+                              sign_with=self.args.priv_key)
 
     def yield_results(self, url, start_page=1,
                       start_date='', end_date='', cpid=''):
@@ -339,9 +352,12 @@ def parse_cli_args(args=None):
     shared_args.add_argument('--url',
                              action='store',
                              required=False,
-                             default='http://api.refstack.net',
+                             default=os.environ.get(
+                                 'REFSTACK_URL', 'http://api.refstack.net'),
                              type=str,
-                             help='Refstack API URL to upload results to '
+                             help='Refstack API URL to upload results to. '
+                                  'Defaults to env[REFSTACK_URL] or '
+                                  'http://api.refstack.net if it is not set '
                                   '(--url http://localhost:8000).')
 
     shared_args.add_argument('-i', '--sign',
@@ -351,6 +367,11 @@ def parse_cli_args(args=None):
                              help='Private RSA key. '
                                   'OpenSSH RSA keys format supported ('
                                   '-i ~/.ssh/id-rsa)')
+    shared_args.add_argument('-y',
+                             action='store_true',
+                             dest='quiet',
+                             required=False,
+                             help='Assume Yes to all prompt queries')
 
     # Upload command
     parser_upload = subparsers.add_parser(
