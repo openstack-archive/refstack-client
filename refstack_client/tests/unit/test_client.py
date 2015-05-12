@@ -52,7 +52,7 @@ class TestRefstackClient(unittest.TestCase):
         :return: argv
         """
         argv = [command,
-                '--url', 'http://127.0.0.1']
+                '--url', 'http://127.0.0.1', '-y']
         if command == 'test':
             argv.extend(
                 ('-c', kwargs.get('conf_file_name', self.conf_file_name)))
@@ -227,6 +227,19 @@ class TestRefstackClient(unittest.TestCase):
              'uuid': '0146f675-ffbd-4208-b3a4-60eb628dbc5e'}
         ]
         self.assertEqual(expected, results)
+
+    @mock.patch('six.moves.input')
+    def test_user_query(self, mock_input):
+        client = rc.RefstackClient(rc.parse_cli_args(self.mock_argv()))
+        self.assertTrue(client._user_query('42?'))
+
+        mock_input.return_value = 'n'
+        cli_args = self.mock_argv()
+        cli_args.remove('-y')
+        client = rc.RefstackClient(rc.parse_cli_args(cli_args))
+        self.assertFalse(client._user_query('42?'))
+        mock_input.return_value = 'yes'
+        self.assertTrue(client._user_query('42?'))
 
     def test_post_results(self):
         """
@@ -435,8 +448,8 @@ class TestRefstackClient(unittest.TestCase):
         Test that the upload command runs as expected.
         """
         upload_file_path = self.test_path + "/.testrepository/0.json"
-        args = rc.parse_cli_args(['upload', upload_file_path,
-                                  '--url', 'http://api.test.org'])
+        args = rc.parse_cli_args(
+            self.mock_argv(command='upload') + [upload_file_path])
         client = rc.RefstackClient(args)
 
         client.post_results = MagicMock()
@@ -450,7 +463,7 @@ class TestRefstackClient(unittest.TestCase):
                  'uuid': '0146f675-ffbd-4208-b3a4-60eb628dbc5e'}
             ]
         }
-        client.post_results.assert_called_with('http://api.test.org',
+        client.post_results.assert_called_with('http://127.0.0.1',
                                                expected_json,
                                                sign_with=None)
 
