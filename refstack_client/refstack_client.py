@@ -204,7 +204,8 @@ class RefstackClient:
         try:
             response = requests.post(endpoint,
                                      data=data,
-                                     headers=headers)
+                                     headers=headers,
+                                     verify=self.args.insecure)
             self.logger.info(endpoint + " Response: " + str(response.text))
         except Exception as e:
             self.logger.info('Failed to post %s - %s ' % (endpoint, e))
@@ -359,6 +360,12 @@ def parse_cli_args(args=None):
                                   'Defaults to env[REFSTACK_URL] or '
                                   'http://api.refstack.net if it is not set '
                                   '(--url http://localhost:8000).')
+
+    shared_args.add_argument('-k', '--insecure',
+                             action='store_false',
+                             dest='insecure',
+                             required=False,
+                             help='Assume Yes to all prompt queries')
 
     shared_args.add_argument('-i', '--sign',
                              type=str,
