@@ -53,16 +53,17 @@ class TestRefstackClient(unittest.TestCase):
         """
         argv = [command,
                 '--url', 'http://127.0.0.1', '-y']
-        if command == 'test':
-            argv.extend(
-                ('-c', kwargs.get('conf_file_name', self.conf_file_name)))
-            if kwargs.get('test_cases', None):
-                argv.extend(('--test-cases', kwargs.get('test_cases', None)))
-
         if kwargs.get('priv_key', None):
             argv.extend(('-i', kwargs.get('priv_key', None)))
         if kwargs.get('verbose', None):
             argv.append(kwargs.get('verbose', None))
+
+        if command == 'test':
+            argv.extend(
+                ('-c', kwargs.get('conf_file_name', self.conf_file_name)))
+            if kwargs.get('test_cases', None):
+                argv.extend(('--', kwargs.get('test_cases', None)))
+
         return argv
 
     def mock_keystone(self):
@@ -310,8 +311,8 @@ class TestRefstackClient(unittest.TestCase):
         client.test()
 
         mock_popen.assert_called_with(
-            ('%s/run_tempest.sh' % self.test_path, '-C', self.conf_file_name,
-             '-V', '-t', '--', 'tempest.api.compute'),
+            ['%s/run_tempest.sh' % self.test_path, '-C', self.conf_file_name,
+             '-V', '-t', '--', 'tempest.api.compute'],
             stderr=None
         )
 
@@ -324,7 +325,7 @@ class TestRefstackClient(unittest.TestCase):
         """
         argv = self.mock_argv(verbose='-vv',
                               test_cases='tempest.api.compute')
-        argv.append('--upload')
+        argv.insert(1, '--upload')
         args = rc.parse_cli_args(argv)
         client = rc.RefstackClient(args)
         client.tempest_dir = self.test_path
@@ -338,8 +339,8 @@ class TestRefstackClient(unittest.TestCase):
         client._save_json_results = MagicMock()
         client.test()
         mock_popen.assert_called_with(
-            ('%s/run_tempest.sh' % self.test_path, '-C', self.conf_file_name,
-             '-V', '-t', '--', 'tempest.api.compute'),
+            ['%s/run_tempest.sh' % self.test_path, '-C', self.conf_file_name,
+             '-V', '-t', '--', 'tempest.api.compute'],
             stderr=None
         )
 
@@ -352,7 +353,7 @@ class TestRefstackClient(unittest.TestCase):
         """
         argv = self.mock_argv(verbose='-vv', priv_key='rsa_key',
                               test_cases='tempest.api.compute')
-        argv.append('--upload')
+        argv.insert(1, '--upload')
         args = rc.parse_cli_args(argv)
         client = rc.RefstackClient(args)
         client.tempest_dir = self.test_path
@@ -366,8 +367,8 @@ class TestRefstackClient(unittest.TestCase):
         client._save_json_results = MagicMock()
         client.test()
         mock_popen.assert_called_with(
-            ('%s/run_tempest.sh' % self.test_path, '-C', self.conf_file_name,
-             '-V', '-t', '--', 'tempest.api.compute'),
+            ['%s/run_tempest.sh' % self.test_path, '-C', self.conf_file_name,
+             '-V', '-t', '--', 'tempest.api.compute'],
             stderr=None
         )
 
@@ -404,7 +405,8 @@ class TestRefstackClient(unittest.TestCase):
         """
         argv = self.mock_argv(verbose='-vv',
                               test_cases='tempest.api.compute')
-        argv.extend(['--result-file-tag', 'my-test'])
+        argv.insert(1, '--result-file-tag')
+        argv.insert(2, 'my-test')
         args = rc.parse_cli_args(argv)
         client = rc.RefstackClient(args)
         client.tempest_dir = self.test_path
@@ -418,8 +420,8 @@ class TestRefstackClient(unittest.TestCase):
         client.test()
 
         mock_popen.assert_called_with(
-            ('%s/run_tempest.sh' % self.test_path, '-C', self.conf_file_name,
-             '-V', '-t', '--', 'tempest.api.compute'),
+            ['%s/run_tempest.sh' % self.test_path, '-C', self.conf_file_name,
+             '-V', '-t', '--', 'tempest.api.compute'],
             stderr=None
         )
 
@@ -477,9 +479,9 @@ class TestRefstackClient(unittest.TestCase):
         client = rc.RefstackClient(args)
         self.assertRaises(SystemExit, client.upload)
 
-    def test_yeild_results(self):
+    def test_yield_results(self):
         """
-        Test the post_results method, ensuring a requests call is made.
+        Test the yield_results method, ensuring that results are retrieved.
         """
         args = rc.parse_cli_args(self.mock_argv(command='list'))
         client = rc.RefstackClient(args)

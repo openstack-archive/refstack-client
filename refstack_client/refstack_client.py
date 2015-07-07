@@ -229,14 +229,14 @@ class RefstackClient:
         # Run the tempest script, specifying the conf file, the flag
         # telling it to use a virtual environment (-V), and the flag
         # telling it to run the tests serially (-t).
-        cmd = (self.tempest_script, '-C', self.conf_file, '-V', '-t')
+        cmd = [self.tempest_script, '-C', self.conf_file, '-V', '-t']
 
         # Add the tempest test cases to test as arguments. If no test
         # cases are specified, then all Tempest API tests will be run.
-        if self.args.test_cases:
-            cmd += ('--', self.args.test_cases)
+        if 'arbitrary_args' in self.args:
+            cmd += self.args.arbitrary_args
         else:
-            cmd += ('--', "tempest.api")
+            cmd += ['--', "tempest.api"]
 
         # If there were two verbose flags, show tempest results.
         if self.args.verbose > 1:
@@ -413,20 +413,24 @@ def parse_cli_args(args=None):
                              help='Specify a string to prefix the result '
                                   'file with to easier distinguish them. ')
 
-    parser_test.add_argument('-t', '--test-cases',
-                             action='store',
-                             required=False,
-                             dest='test_cases',
-                             type=str,
-                             help='Specify a subset of test cases to run '
-                                  '(e.g. --test-cases tempest.api.compute).')
-
     parser_test.add_argument('-u', '--upload',
                              action='store_true',
                              required=False,
                              help='After running Tempest, upload the test '
                                   'results to the default Refstack API server '
                                   'or the server specified by --url.')
+
+    # This positional argument will allow arbitrary arguments to be passed in
+    # with the usage of '--'.
+    parser_test.add_argument('arbitrary_args',
+                             nargs=argparse.REMAINDER,
+                             help='After the first "--", you can pass '
+                                  'arbitrary arguments to the Tempest runner. '
+                                  'This can be used for running specific test '
+                                  'cases or test lists. Some examples are: '
+                                  '-- tempest.api.compute.images.test_list_'
+                                  'image_filters '
+                                  '-- --load-list /tmp/test-list.txt')
     parser_test.set_defaults(func="test")
 
     # List command
