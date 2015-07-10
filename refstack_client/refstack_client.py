@@ -342,6 +342,37 @@ class RefstackClient:
             except KeyboardInterrupt:
                 return
 
+    def _sign_pubkey(self):
+        """Generate self signature for public key"""
+        try:
+            with open(self.args.priv_key_to_sign) as priv_key_file:
+                private_key = RSA.importKey(priv_key_file.read())
+        except (IOError, ValueError) as e:
+            self.logger.error('Error reading private key %s'
+                              '' % self.args.priv_key_to_sign)
+            self.logger.exception(e)
+            return
+        pubkey_filename = '.'.join((self.args.priv_key_to_sign, 'pub'))
+        try:
+            with open(pubkey_filename) as pub_key_file:
+                pub_key = pub_key_file.read()
+        except IOError:
+            self.logger.error('Public key file %s not found. '
+                              'Public key is generated from private one.'
+                              '' % pubkey_filename)
+            pub_key = private_key.publickey().exportKey('OpenSSH')
+        data_hash = SHA256.new()
+        data_hash.update('signature'.encode('utf-8'))
+        signer = PKCS1_v1_5.new(private_key)
+        signature = binascii.b2a_hex(signer.sign(data_hash))
+        return pub_key, signature
+
+    def self_sign(self):
+        """Generate signature for public key."""
+        pub_key, signature = self._sign_pubkey()
+        print('Public key:\n%s\n' % pub_key)
+        print('Self signature:\n%s\n' % signature)
+
 
 def parse_cli_args(args=None):
 
@@ -349,52 +380,57 @@ def parse_cli_args(args=None):
                     'To see help on specific argument, do:\n'
                     'refstack-client <ARG> -h')
 
-    parser = argparse.ArgumentParser(description='Refstack-client arguments',
-                                     formatter_class=argparse.
-                                     ArgumentDefaultsHelpFormatter,
-                                     usage=usage_string)
+    parser = argparse.ArgumentParser(
+        description='Refstack-client arguments',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        usage=usage_string
+    )
 
     subparsers = parser.add_subparsers(help='Available subcommands.')
 
     # Arguments that go with all subcommands.
     shared_args = argparse.ArgumentParser(add_help=False)
+
     shared_args.add_argument('-v', '--verbose',
                              action='count',
                              help='Show verbose output.')
 
-    shared_args.add_argument('--url',
-                             action='store',
-                             required=False,
-                             default=os.environ.get(
-                                 'REFSTACK_URL', 'http://api.refstack.net'),
-                             type=str,
-                             help='Refstack API URL to upload results to. '
-                                  'Defaults to env[REFSTACK_URL] or '
-                                  'http://api.refstack.net if it is not set '
-                                  '(--url http://localhost:8000).')
-
-    shared_args.add_argument('-k', '--insecure',
-                             action='store_false',
-                             dest='insecure',
-                             required=False,
-                             help='Assume Yes to all prompt queries')
-
-    shared_args.add_argument('-i', '--sign',
-                             type=str,
-                             required=False,
-                             dest='priv_key',
-                             help='Private RSA key. '
-                                  'OpenSSH RSA keys format supported ('
-                                  '-i ~/.ssh/id-rsa)')
     shared_args.add_argument('-y',
                              action='store_true',
                              dest='quiet',
                              required=False,
                              help='Assume Yes to all prompt queries')
 
+    # Arguments that go with network-related  subcommands (test, list, etc.).
+    network_args = argparse.ArgumentParser(add_help=False)
+    network_args.add_argument('--url',
+                              action='store',
+                              required=False,
+                              default=os.environ.get(
+                                  'REFSTACK_URL', 'http://api.refstack.net'),
+                              type=str,
+                              help='Refstack API URL to upload results to. '
+                                   'Defaults to env[REFSTACK_URL] or '
+                                   'http://api.refstack.net if it is not set '
+                                   '(--url http://localhost:8000).')
+
+    network_args.add_argument('-k', '--insecure',
+                              action='store_false',
+                              dest='insecure',
+                              required=False,
+                              help='Skip SSL checks while interacting '
+                                   'with Refstack API')
+
+    network_args.add_argument('-i', '--sign',
+                              type=str,
+                              required=False,
+                              dest='priv_key',
+                              help='Path to private RSA key. '
+                                   'OpenSSH RSA keys format supported')
+
     # Upload command
     parser_upload = subparsers.add_parser(
-        'upload', parents=[shared_args],
+        'upload', parents=[shared_args, network_args],
         help='Upload an existing result file.'
     )
 
@@ -406,7 +442,7 @@ def parse_cli_args(args=None):
 
     # Test command
     parser_test = subparsers.add_parser(
-        'test', parents=[shared_args],
+        'test', parents=[shared_args, network_args],
         help='Run Tempest against a cloud.')
 
     parser_test.add_argument('-c', '--conf-file',
@@ -457,7 +493,7 @@ def parse_cli_args(args=None):
 
     # List command
     parser_list = subparsers.add_parser(
-        'list', parents=[shared_args],
+        'list', parents=[shared_args, network_args],
         help='List last results from Refstack')
     parser_list.add_argument('--start-date',
                              required=False,
@@ -474,5 +510,17 @@ def parse_cli_args(args=None):
                                   'test results '
                                   '(e.g. --end-date "2015-04-24 01:23:56").')
     parser_list.set_defaults(func='list')
+
+    # Sign command
+    parser_sign = subparsers.add_parser(
+        'sign', parents=[shared_args],
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        help='Generate signature for public key.')
+    parser_sign.add_argument('priv_key_to_sign',
+                             type=str,
+                             help='Path to private RSA key. '
+                                  'OpenSSH RSA keys format supported')
+
+    parser_sign.set_defaults(func='self_sign')
 
     return parser.parse_args(args=args)
