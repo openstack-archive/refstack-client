@@ -1,0 +1,3 @@
+tempest.api.test1[gate]
+tempest.api.test2
+tempest.api.test3[foo,bar](scenario)

@@ -2,3 +2,4 @@ python-keystoneclient>=0.10.0
 gitpython>=0.3.2.RC1
 python-subunit>=0.0.18
 pycrypto>=2.6.1
+requests>=2.5.2

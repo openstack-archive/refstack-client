@@ -26,6 +26,7 @@ import unittest
 
 
 import refstack_client.refstack_client as rc
+import refstack_client.list_parser as lp
 
 
 class TestRefstackClient(unittest.TestCase):
@@ -379,6 +380,33 @@ class TestRefstackClient(unittest.TestCase):
              'cpid': 'test-id',
              'results': ['test']},
             sign_with='rsa_key'
+        )
+
+    def test_run_tempest_with_test_list(self):
+        """Test that the Tempest script runs with a test list file."""
+        argv = self.mock_argv(verbose='-vv')
+        argv.extend(['--test-list', 'test-list.txt'])
+        args = rc.parse_cli_args(argv)
+        client = rc.RefstackClient(args)
+        client.tempest_dir = self.test_path
+        mock_popen = self.patch(
+            'refstack_client.refstack_client.subprocess.Popen',
+            return_value=MagicMock(returncode=0))
+        self.patch("os.path.isfile", return_value=True)
+        self.mock_keystone()
+        client.get_passed_tests = MagicMock(return_value=[{'name': 'test'}])
+        client._save_json_results = MagicMock()
+        client.post_results = MagicMock()
+        lp.TestListParser.get_normalized_test_list = MagicMock(
+            return_value="/tmp/some-list")
+        client.test()
+
+        lp.TestListParser.get_normalized_test_list.assert_called_with(
+            'test-list.txt')
+        mock_popen.assert_called_with(
+            ['%s/run_tempest.sh' % self.test_path, '-C', self.conf_file_name,
+             '-V', '-t', '--', '--load-list', '/tmp/some-list'],
+            stderr=None
         )
 
     def test_run_tempest_no_conf_file(self):

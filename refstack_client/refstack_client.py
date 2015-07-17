@@ -42,6 +42,7 @@ import requests
 import requests.exceptions
 import six.moves
 from subunit_processor import SubunitProcessor
+from list_parser import TestListParser
 
 
 def get_input():
@@ -231,9 +232,20 @@ class RefstackClient:
         # telling it to run the tests serially (-t).
         cmd = [self.tempest_script, '-C', self.conf_file, '-V', '-t']
 
-        # Add the tempest test cases to test as arguments. If no test
-        # cases are specified, then all Tempest API tests will be run.
-        if 'arbitrary_args' in self.args:
+        # If a test list was specified, have it take precedence.
+        if self.args.test_list:
+            self.logger.info("Normalizing test list...")
+            parser = TestListParser(os.path.abspath(self.tempest_dir))
+            parser.setup_venv(self.logger.getEffectiveLevel())
+            list_file = parser.get_normalized_test_list(self.args.test_list)
+            if list_file:
+                cmd += ('--', '--load-list', list_file)
+            else:
+                self.logger.error("Error normalizing passed in test list.")
+                exit(1)
+        elif 'arbitrary_args' in self.args:
+            # Add the tempest test cases to test as arguments. If no test
+            # cases are specified, then all Tempest API tests will be run.
             cmd += self.args.arbitrary_args
         else:
             cmd += ['--', "tempest.api"]
@@ -412,6 +424,16 @@ def parse_cli_args(args=None):
                              type=str,
                              help='Specify a string to prefix the result '
                                   'file with to easier distinguish them. ')
+
+    parser_test.add_argument('--test-list',
+                             action='store',
+                             required=False,
+                             dest='test_list',
+                             type=str,
+                             help='Specify the file path or URL of a test '
+                                  'list text file. This test list will '
+                                  'contain specific test cases that should '
+                                  'be tested.')
 
     parser_test.add_argument('-u', '--upload',
                              action='store_true',
