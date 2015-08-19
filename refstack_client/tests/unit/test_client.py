@@ -52,13 +52,12 @@ class TestRefstackClient(unittest.TestCase):
         :param verbose: verbosity level
         :return: argv
         """
-        argv = [command,
-                '--url', 'http://127.0.0.1', '-y']
-        if kwargs.get('priv_key', None):
-            argv.extend(('-i', kwargs.get('priv_key', None)))
+        argv = [command]
         if kwargs.get('verbose', None):
             argv.append(kwargs.get('verbose', None))
-
+        argv.extend(['--url', 'http://127.0.0.1', '-y'])
+        if kwargs.get('priv_key', None):
+            argv.extend(('-i', kwargs.get('priv_key', None)))
         if command == 'test':
             argv.extend(
                 ('-c', kwargs.get('conf_file_name', self.conf_file_name)))
@@ -271,7 +270,9 @@ class TestRefstackClient(unittest.TestCase):
         """
         Test the post_results method, ensuring a requests call is made.
         """
-        args = rc.parse_cli_args(self.mock_argv(priv_key='rsa_key'))
+        argv = self.mock_argv(command='upload', priv_key='rsa_key')
+        argv.append('fake.json')
+        args = rc.parse_cli_args(argv)
         client = rc.RefstackClient(args)
         client.logger.info = MagicMock()
         content = {'duration_seconds': 0,
@@ -326,7 +327,7 @@ class TestRefstackClient(unittest.TestCase):
         """
         argv = self.mock_argv(verbose='-vv',
                               test_cases='tempest.api.compute')
-        argv.insert(1, '--upload')
+        argv.insert(2, '--upload')
         args = rc.parse_cli_args(argv)
         client = rc.RefstackClient(args)
         client.tempest_dir = self.test_path
@@ -354,13 +355,14 @@ class TestRefstackClient(unittest.TestCase):
         """
         argv = self.mock_argv(verbose='-vv', priv_key='rsa_key',
                               test_cases='tempest.api.compute')
-        argv.insert(1, '--upload')
+        argv.insert(2, '--upload')
         args = rc.parse_cli_args(argv)
         client = rc.RefstackClient(args)
         client.tempest_dir = self.test_path
         mock_popen = self.patch(
             'refstack_client.refstack_client.subprocess.Popen',
-            return_value=MagicMock(returncode=0))
+            return_value=MagicMock(returncode=0)
+        )
         self.patch("os.path.isfile", return_value=True)
         self.mock_keystone()
         client.get_passed_tests = MagicMock(return_value=['test'])
@@ -433,8 +435,8 @@ class TestRefstackClient(unittest.TestCase):
         """
         argv = self.mock_argv(verbose='-vv',
                               test_cases='tempest.api.compute')
-        argv.insert(1, '--result-file-tag')
-        argv.insert(2, 'my-test')
+        argv.insert(2, '--result-file-tag')
+        argv.insert(3, 'my-test')
         args = rc.parse_cli_args(argv)
         client = rc.RefstackClient(args)
         client.tempest_dir = self.test_path
@@ -479,7 +481,8 @@ class TestRefstackClient(unittest.TestCase):
         """
         upload_file_path = self.test_path + "/.testrepository/0.json"
         args = rc.parse_cli_args(
-            self.mock_argv(command='upload') + [upload_file_path])
+            self.mock_argv(command='upload', priv_key='rsa_key')
+            + [upload_file_path])
         client = rc.RefstackClient(args)
 
         client.post_results = MagicMock()
@@ -495,7 +498,7 @@ class TestRefstackClient(unittest.TestCase):
         }
         client.post_results.assert_called_with('http://127.0.0.1',
                                                expected_json,
-                                               sign_with=None)
+                                               sign_with='rsa_key')
 
     def test_upload_nonexisting_file(self):
         """
@@ -559,3 +562,15 @@ class TestRefstackClient(unittest.TestCase):
         client.yield_results = MagicMock(return_value=mock_results)
         client.list()
         self.assertTrue(mock_stdout.write.called)
+
+    def test_sign_pubkey(self):
+        """
+        Test that the test command will run the tempest script and call
+        post_results when the --upload argument is passed in.
+        """
+        args = rc.parse_cli_args(['sign',
+                                  os.path.join(self.test_path, 'rsa_key')])
+        client = rc.RefstackClient(args)
+        pubkey, signature = client._sign_pubkey()
+        self.assertTrue(pubkey.startswith('ssh-rsa AAAA'))
+        self.assertTrue(signature.startswith('413cb954'))
