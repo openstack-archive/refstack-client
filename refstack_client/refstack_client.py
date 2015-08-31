@@ -17,7 +17,7 @@
 
 
 """
-Run Tempest and upload results to Refstack.
+Run Tempest and upload results to RefStack.
 
 This module runs the Tempest test suite on an OpenStack environment given a
 Tempest configuration file.
@@ -97,7 +97,7 @@ class RefstackClient:
                                            'run_tempest.sh')
 
     def _prep_upload(self):
-        '''Prepare an upload to the Refstack_api'''
+        '''Prepare an upload to the RefStack_api'''
         if not os.path.isfile(self.args.file):
             self.logger.error("File not valid: %s" % self.args.file)
             exit(1)
@@ -297,7 +297,7 @@ class RefstackClient:
                               process.returncode)
 
     def upload(self):
-        '''Perform upload to Refstack URL.'''
+        '''Perform upload to RefStack URL.'''
         self._prep_upload()
         json_file = open(self.upload_file)
         json_data = json.load(json_file)
@@ -330,7 +330,7 @@ class RefstackClient:
                     raise StopIteration
 
     def list(self):
-        """Retrieve list with last test results from Refstack."""
+        """Retrieve list with last test results from RefStack."""
         results = self.yield_results(self.args.url,
                                      start_date=self.args.start_date,
                                      end_date=self.args.end_date)
@@ -381,7 +381,7 @@ def parse_cli_args(args=None):
                     'refstack-client <ARG> -h')
 
     parser = argparse.ArgumentParser(
-        description='Refstack-client arguments',
+        description='RefStack-client arguments',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         usage=usage_string
     )
@@ -409,7 +409,7 @@ def parse_cli_args(args=None):
                               default=os.environ.get(
                                   'REFSTACK_URL', 'http://refstack.net/api'),
                               type=str,
-                              help='Refstack API URL to upload results to. '
+                              help='RefStack API URL to upload results to. '
                                    'Defaults to env[REFSTACK_URL] or '
                                    'http://refstack.net/api if it is not set '
                                    '(--url http://localhost:8000).')
@@ -419,7 +419,7 @@ def parse_cli_args(args=None):
                               dest='insecure',
                               required=False,
                               help='Skip SSL checks while interacting '
-                                   'with Refstack API')
+                                   'with RefStack API')
 
     network_args.add_argument('-i', '--sign',
                               type=str,
@@ -475,7 +475,7 @@ def parse_cli_args(args=None):
                              action='store_true',
                              required=False,
                              help='After running Tempest, upload the test '
-                                  'results to the default Refstack API server '
+                                  'results to the default RefStack API server '
                                   'or the server specified by --url.')
 
     # This positional argument will allow arbitrary arguments to be passed in
@@ -494,7 +494,7 @@ def parse_cli_args(args=None):
     # List command
     parser_list = subparsers.add_parser(
         'list', parents=[shared_args, network_args],
-        help='List last results from Refstack')
+        help='List last results from RefStack')
     parser_list.add_argument('--start-date',
                              required=False,
                              dest='start_date',

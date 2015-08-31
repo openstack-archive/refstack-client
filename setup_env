@@ -7,7 +7,7 @@ function usage {
     set +x
     SCRIPT_NAME="basename ${BASH_SOURCE[0]}"
     echo "Usage: ${SCRIPT_NAME} [OPTION]..."
-    echo "Setup Refstack client with test environment"
+    echo "Setup RefStack client with test environment"
     echo ""
     echo "  -h,                      Print this usage message"
     echo "  -c                       Tempest test runner commit. You can specify SHA or branch here"

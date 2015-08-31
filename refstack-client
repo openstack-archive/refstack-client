@@ -17,7 +17,7 @@
 
 
 """
-Run Tempest and upload results to Refstack.
+Run Tempest and upload results to RefStack.
 
 This module runs the Tempest test suite on an OpenStack environment given a
 Tempest configuration file.
