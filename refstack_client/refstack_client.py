@@ -128,7 +128,8 @@ class RefstackClient:
         try:
             args = {'auth_url': conf_file.get('identity', 'uri'),
                     'username': conf_file.get('identity', 'admin_username'),
-                    'password': conf_file.get('identity', 'admin_password')}
+                    'password': conf_file.get('identity', 'admin_password'),
+                    'insecure': self.args.insecure}
 
             if self.conf.has_option('identity', 'admin_tenant_id'):
                 args['tenant_id'] = conf_file.get('identity',
@@ -206,7 +207,7 @@ class RefstackClient:
             response = requests.post(endpoint,
                                      data=data,
                                      headers=headers,
-                                     verify=self.args.insecure)
+                                     verify=not self.args.insecure)
             self.logger.info(endpoint + " Response: " + str(response.text))
         except Exception as e:
             self.logger.info('Failed to post %s - %s ' % (endpoint, e))
@@ -415,11 +416,11 @@ def parse_cli_args(args=None):
                                    '(--url http://localhost:8000).')
 
     network_args.add_argument('-k', '--insecure',
-                              action='store_false',
+                              action='store_true',
                               dest='insecure',
                               required=False,
                               help='Skip SSL checks while interacting '
-                                   'with RefStack API')
+                                   'with RefStack API and Keystone endpoint')
 
     network_args.add_argument('-i', '--sign',
                               type=str,

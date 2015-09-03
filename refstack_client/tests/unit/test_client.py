@@ -148,7 +148,7 @@ class TestRefstackClient(unittest.TestCase):
         cpid = client._get_cpid_from_keystone(client.conf)
         self.ks_client_builder.assert_called_with(
             username='admin', tenant_id='admin_tenant_id',
-            password='test', auth_url='0.0.0.0:35357'
+            password='test', auth_url='0.0.0.0:35357', insecure=False
         )
         self.assertEqual('test-id', cpid)
 
@@ -166,10 +166,26 @@ class TestRefstackClient(unittest.TestCase):
         cpid = client._get_cpid_from_keystone(client.conf)
         self.ks_client_builder.assert_called_with(
             username='admin', tenant_name='admin_tenant_name',
-            password='test', auth_url='0.0.0.0:35357'
+            password='test', auth_url='0.0.0.0:35357', insecure=False
         )
-
         self.assertEqual('test-id', cpid)
+
+    def test_get_cpid_from_keystone_insecure(self):
+        """
+        Test getting the CPID from Keystone with the insecure arg passed in.
+        """
+        argv = self.mock_argv()
+        argv.append('--insecure')
+        args = rc.parse_cli_args(argv)
+        client = rc.RefstackClient(args)
+        client.tempest_dir = self.test_path
+        client._prep_test()
+        self.mock_keystone()
+        client._get_cpid_from_keystone(client.conf)
+        self.ks_client_builder.assert_called_with(
+            username='admin', tenant_id='admin_tenant_id',
+            password='test', auth_url='0.0.0.0:35357', insecure=True
+        )
 
     def test_get_cpid_from_keystone_no_admin_tenant(self):
         """
