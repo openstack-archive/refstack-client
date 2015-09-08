@@ -1,0 +1,9 @@
+Verified+2: Jenkins
+Code-Review+2: Sergey Slipushenko <sslypushenko@mirantis.com>
+Code-Review+2: Catherine Diep <cdiep@us.ibm.com>
+Workflow+1: Catherine Diep <cdiep@us.ibm.com>
+Submitted-by: Jenkins
+Submitted-at: Tue, 08 Sep 2015 23:29:38 +0000
+Reviewed-on: https://review.openstack.org/220324
+Project: stackforge/refstack-client
+Branch: refs/heads/master
