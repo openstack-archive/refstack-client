@@ -37,7 +37,8 @@ import time
 from Crypto.Hash import SHA256
 from Crypto.PublicKey import RSA
 from Crypto.Signature import PKCS1_v1_5
-from keystoneclient.v2_0 import client as ksclient
+from keystoneclient.v2_0 import client as ksclient2
+from keystoneclient.v3 import client as ksclient3
 import requests
 import requests.exceptions
 import six.moves
@@ -126,23 +127,54 @@ class RefstackClient:
     def _get_cpid_from_keystone(self, conf_file):
         '''This will get the Keystone service ID which is used as the CPID.'''
         try:
-            args = {'auth_url': conf_file.get('identity', 'uri'),
-                    'username': conf_file.get('identity', 'admin_username'),
-                    'password': conf_file.get('identity', 'admin_password'),
-                    'insecure': self.args.insecure}
+            # Prefer Keystone V3 API if it is enabled
+            auth_version = (
+                'v3' if (conf_file.has_option('identity-feature-enabled',
+                                              'api_v3')
+                         and conf_file.get('identity-feature-enabled',
+                                           'api_v3')
+                         and conf_file.has_option('identity', 'uri_v3'))
+                else 'v2')
+            args = {'insecure': self.args.insecure}
 
-            if self.conf.has_option('identity', 'admin_tenant_id'):
-                args['tenant_id'] = conf_file.get('identity',
-                                                  'admin_tenant_id')
+            auth_args = {
+                'username': conf_file.get('identity', 'username'),
+                'password': conf_file.get('identity', 'password')
+            }
+
+            if self.conf.has_option('identity', 'tenant_id'):
+                auth_args['tenant_id'] = conf_file.get('identity',
+                                                       'tenant_id')
             else:
-                args['tenant_name'] = conf_file.get('identity',
-                                                    'admin_tenant_name')
+                auth_args['tenant_name'] = conf_file.get('identity',
+                                                         'tenant_name')
 
-            client = ksclient.Client(**args)
-            services = client.services.list()
-            for service in services:
-                if service.type == "identity":
-                    return service.id
+            args.update(auth_args)
+            if auth_version == 'v2':
+                args['auth_url'] = conf_file.get('identity', 'uri')
+                client = ksclient2.Client(**args)
+                token = client.tokens.authenticate(**auth_args)
+                for service in token.serviceCatalog:
+                    if service['type'] == 'identity':
+                        return service['endpoints'][0]['id']
+            elif auth_version == 'v3':
+                args['auth_url'] = conf_file.get('identity', 'uri_v3')
+                if conf_file.has_option('identity', 'domain_name'):
+                    args['project_domain_name'] = conf_file.get('identity',
+                                                                'domain_name')
+                    args['user_domain_name'] = conf_file.get('identity',
+                                                             'domain_name')
+                if conf_file.has_option('identity', 'region'):
+                    args['region_name'] = conf_file.get('identity',
+                                                        'region')
+                client = ksclient3.Client(**args)
+                token = client.auth_ref
+                for service in token['catalog']:
+                    if service['type'] == 'identity':
+                        return service['id']
+            else:
+                raise ValueError('Auth_version %s is unsupported'
+                                 '' % auth_version)
 
         except ConfigParser.Error as e:
             # Most likely a missing section or option in the config file.

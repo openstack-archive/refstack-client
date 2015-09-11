@@ -70,15 +70,27 @@ class TestRefstackClient(unittest.TestCase):
         """
         Mock the Keystone client methods.
         """
-        self.mock_identity_service = MagicMock(
-            name='service', **{'type': 'identity', 'id': 'test-id'})
-        self.mock_ks_client = MagicMock(
+        self.mock_identity_service_v2 = {'type': 'identity',
+                                         'endpoints': [{'id': 'test-id'}]}
+        self.mock_identity_service_v3 = {'type': 'identity',
+                                         'id': 'test-id'}
+        self.mock_ks2_client = MagicMock(
             name='ks_client',
-            **{'services.list.return_value': [self.mock_identity_service]}
+            **{'tokens.authenticate.return_value.serviceCatalog':
+               [self.mock_identity_service_v2]}
         )
-        self.ks_client_builder = self.patch(
-            'refstack_client.refstack_client.ksclient.Client',
-            return_value=self.mock_ks_client
+        self.mock_ks3_client = MagicMock(
+            name='ks_client',
+            **{'auth_ref':
+               {'catalog': [self.mock_identity_service_v3]}}
+        )
+        self.ks2_client_builder = self.patch(
+            'refstack_client.refstack_client.ksclient2.Client',
+            return_value=self.mock_ks2_client
+        )
+        self.ks3_client_builder = self.patch(
+            'refstack_client.refstack_client.ksclient3.Client',
+            return_value=self.mock_ks3_client
         )
 
     def setUp(self):
@@ -146,9 +158,9 @@ class TestRefstackClient(unittest.TestCase):
         client._prep_test()
         self.mock_keystone()
         cpid = client._get_cpid_from_keystone(client.conf)
-        self.ks_client_builder.assert_called_with(
+        self.ks2_client_builder.assert_called_with(
             username='admin', tenant_id='admin_tenant_id',
-            password='test', auth_url='0.0.0.0:35357', insecure=False
+            password='test', auth_url='0.0.0.0:35357/v2.0', insecure=False
         )
         self.assertEqual('test-id', cpid)
 
@@ -160,13 +172,13 @@ class TestRefstackClient(unittest.TestCase):
         client = rc.RefstackClient(args)
         client.tempest_dir = self.test_path
         client._prep_test()
-        client.conf.remove_option('identity', 'admin_tenant_id')
-        client.conf.set('identity', 'admin_tenant_name', 'admin_tenant_name')
+        client.conf.remove_option('identity', 'tenant_id')
+        client.conf.set('identity', 'tenant_name', 'tenant_name')
         self.mock_keystone()
         cpid = client._get_cpid_from_keystone(client.conf)
-        self.ks_client_builder.assert_called_with(
-            username='admin', tenant_name='admin_tenant_name',
-            password='test', auth_url='0.0.0.0:35357', insecure=False
+        self.ks2_client_builder.assert_called_with(
+            username='admin', tenant_name='tenant_name',
+            password='test', auth_url='0.0.0.0:35357/v2.0', insecure=False
         )
         self.assertEqual('test-id', cpid)
 
@@ -182,22 +194,29 @@ class TestRefstackClient(unittest.TestCase):
         client._prep_test()
         self.mock_keystone()
         client._get_cpid_from_keystone(client.conf)
-        self.ks_client_builder.assert_called_with(
+        self.ks2_client_builder.assert_called_with(
             username='admin', tenant_id='admin_tenant_id',
-            password='test', auth_url='0.0.0.0:35357', insecure=True
+            password='test', auth_url='0.0.0.0:35357/v2.0', insecure=True
         )
 
-    def test_get_cpid_from_keystone_no_admin_tenant(self):
+    def test_get_cpid_from_keystone_v3(self):
         """
-        Test exit under absence of information about admin tenant info.
+        Test getting the CPID from Keystone API v3.
         """
-        args = rc.parse_cli_args(self.mock_argv(verbose='-vv'))
+        args = rc.parse_cli_args(self.mock_argv())
         client = rc.RefstackClient(args)
         client.tempest_dir = self.test_path
         client._prep_test()
-        client.conf.remove_option('identity', 'admin_tenant_id')
-        self.assertRaises(SystemExit, client._get_cpid_from_keystone,
-                          client.conf)
+        client.conf.remove_option('identity', 'tenant_id')
+        client.conf.set('identity', 'tenant_name', 'tenant_name')
+        client.conf.set('identity-feature-enabled', 'api_v3', 'true')
+        self.mock_keystone()
+        cpid = client._get_cpid_from_keystone(client.conf)
+        self.ks3_client_builder.assert_called_with(
+            username='admin', tenant_name='tenant_name',
+            password='test', auth_url='0.0.0.0:35357/v3', insecure=False
+        )
+        self.assertEqual('test-id', cpid)
 
     def test_form_result_content(self):
         """
