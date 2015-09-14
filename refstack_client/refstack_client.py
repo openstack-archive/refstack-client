@@ -151,7 +151,7 @@ class RefstackClient:
 
     def _form_result_content(self, cpid, duration, results):
         '''This method will create the content for the request. The spec at
-           github.com/stackforge/refstack/blob/master/specs/approved/api-v1.md.
+           github.com/openstack/refstack/blob/master/specs/approved/api-v1.md.
            defines the format expected by the API.'''
         content = {}
         content['cpid'] = cpid
