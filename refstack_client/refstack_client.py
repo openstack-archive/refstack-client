@@ -131,30 +131,26 @@ class RefstackClient:
             auth_version = (
                 'v3' if (conf_file.has_option('identity-feature-enabled',
                                               'api_v3')
-                         and conf_file.get('identity-feature-enabled',
-                                           'api_v3')
+                         and conf_file.getboolean('identity-feature-enabled',
+                                                  'api_v3')
                          and conf_file.has_option('identity', 'uri_v3'))
                 else 'v2')
-            args = {'insecure': self.args.insecure}
-
-            auth_args = {
+            args = {
+                'insecure': self.args.insecure,
                 'username': conf_file.get('identity', 'username'),
                 'password': conf_file.get('identity', 'password')
             }
 
             if self.conf.has_option('identity', 'tenant_id'):
-                auth_args['tenant_id'] = conf_file.get('identity',
-                                                       'tenant_id')
+                args['tenant_id'] = conf_file.get('identity', 'tenant_id')
             else:
-                auth_args['tenant_name'] = conf_file.get('identity',
-                                                         'tenant_name')
+                args['tenant_name'] = conf_file.get('identity', 'tenant_name')
 
-            args.update(auth_args)
             if auth_version == 'v2':
                 args['auth_url'] = conf_file.get('identity', 'uri')
                 client = ksclient2.Client(**args)
-                token = client.tokens.authenticate(**auth_args)
-                for service in token.serviceCatalog:
+                token = client.auth_ref
+                for service in token['serviceCatalog']:
                     if service['type'] == 'identity':
                         return service['endpoints'][0]['id']
             elif auth_version == 'v3':

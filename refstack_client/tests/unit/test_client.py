@@ -76,8 +76,8 @@ class TestRefstackClient(unittest.TestCase):
                                          'id': 'test-id'}
         self.mock_ks2_client = MagicMock(
             name='ks_client',
-            **{'tokens.authenticate.return_value.serviceCatalog':
-               [self.mock_identity_service_v2]}
+            **{'auth_ref':
+               {'serviceCatalog': [self.mock_identity_service_v2]}}
         )
         self.mock_ks3_client = MagicMock(
             name='ks_client',
