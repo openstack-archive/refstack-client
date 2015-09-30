@@ -78,7 +78,7 @@ We've created an "easy button" for Ubuntu, Centos, RHEL and openSuSe.
    f. Adding the `-r` option with a string will prefix the JSON result file with the
       given string (e.g. '-r my-test' will yield a result file like
       'my-test-0.json').
-   g. Adding `--` enables you to pass arbitary arguments to the Tempest runner.
+   g. Adding `--` enables you to pass arbitrary arguments to the Tempest runner.
       After the first `--`, all other subsequent arguments will be passed to
       the Tempest runner as is. This is mainly used for quick verification of the
       target test cases. (e.g. `-- tempest.api.identity.v2.test_token`)
