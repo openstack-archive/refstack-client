@@ -182,6 +182,103 @@ class TestRefstackClient(unittest.TestCase):
         )
         self.assertEqual('test-id', cpid)
 
+    def test_get_cpid_from_keystone_by_tenant_name_from_account_file(self):
+        """
+        Test getting a CPID from Keystone using an admin tenant name
+        from an accounts file.
+        """
+
+        args = rc.parse_cli_args(self.mock_argv())
+        client = rc.RefstackClient(args)
+        client.tempest_dir = self.test_path
+        client._prep_test()
+        client.conf.add_section('auth')
+        client.conf.set('auth',
+                        'test_accounts_file',
+                        '%s/test-accounts.yaml' % self.test_path)
+        self.mock_keystone()
+        cpid = client._get_cpid_from_keystone(client.conf)
+        self.ks2_client_builder.assert_called_with(
+            username='admin', tenant_name='tenant_name',
+            password='test', auth_url='0.0.0.0:35357/v2.0', insecure=False
+        )
+        self.assertEqual('test-id', cpid)
+
+    def test_get_cpid_from_keystone_by_tenant_id_from_account_file(self):
+        """
+        Test getting a CPID from Keystone using an admin tenant ID
+        from an accounts file.
+        """
+
+        accounts = [
+            {
+                'username': 'admin',
+                'tenant_id': 'tenant_id',
+                'password': 'test'
+            }
+        ]
+        self.patch(
+            'refstack_client.refstack_client.read_accounts_yaml',
+            return_value=accounts)
+
+        args = rc.parse_cli_args(self.mock_argv())
+        client = rc.RefstackClient(args)
+        client.tempest_dir = self.test_path
+        client._prep_test()
+        client.conf.add_section('auth')
+        client.conf.set('auth',
+                        'test_accounts_file',
+                        '%s/test-accounts.yaml' % self.test_path)
+        self.mock_keystone()
+        cpid = client._get_cpid_from_keystone(client.conf)
+        self.ks2_client_builder.assert_called_with(
+            username='admin', tenant_id='tenant_id',
+            password='test', auth_url='0.0.0.0:35357/v2.0', insecure=False
+        )
+        self.assertEqual('test-id', cpid)
+
+    def test_get_cpid_account_file_not_found(self):
+        """
+        Test that the client will exit if an accounts file is specified,
+        but does not exist.
+        """
+        args = rc.parse_cli_args(self.mock_argv())
+        client = rc.RefstackClient(args)
+        client.tempest_dir = self.test_path
+        client._prep_test()
+
+        client.conf.add_section('auth')
+        client.conf.set('auth',
+                        'test_accounts_file',
+                        '%s/some-file.yaml' % self.test_path)
+
+        self.mock_keystone()
+        with self.assertRaises(SystemExit):
+            client._get_cpid_from_keystone(client.conf)
+
+    def test_get_cpid_account_file_empty(self):
+        """
+        Test that the client will exit if an accounts file exists,
+        but is empty.
+        """
+        self.patch(
+            'refstack_client.refstack_client.read_accounts_yaml',
+            return_value=None)
+
+        args = rc.parse_cli_args(self.mock_argv())
+        client = rc.RefstackClient(args)
+        client.tempest_dir = self.test_path
+        client._prep_test()
+
+        client.conf.add_section('auth')
+        client.conf.set('auth',
+                        'test_accounts_file',
+                        '%s/some-file.yaml' % self.test_path)
+
+        self.mock_keystone()
+        with self.assertRaises(SystemExit):
+            client._get_cpid_from_keystone(client.conf)
+
     def test_get_cpid_from_keystone_insecure(self):
         """
         Test getting the CPID from Keystone with the insecure arg passed in.

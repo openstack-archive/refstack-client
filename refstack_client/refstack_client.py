@@ -44,6 +44,7 @@ import requests.exceptions
 import six.moves
 from subunit_processor import SubunitProcessor
 from list_parser import TestListParser
+import yaml
 
 
 def get_input():
@@ -51,6 +52,13 @@ def get_input():
     Wrapper for raw_input. Necessary for testing.
     """
     return raw_input().lower()  # pragma: no cover
+
+
+def read_accounts_yaml(path):
+    """Reads a set of accounts from the specified file"""
+    with open(path, 'r') as yaml_file:
+        accounts = yaml.load(yaml_file)
+    return accounts
 
 
 class RefstackClient:
@@ -135,16 +143,45 @@ class RefstackClient:
                                                   'api_v3')
                          and conf_file.has_option('identity', 'uri_v3'))
                 else 'v2')
+
+            if conf_file.has_option('auth', 'test_accounts_file'):
+                account_file = os.path.expanduser(
+                    conf_file.get('auth', 'test_accounts_file'))
+                if not os.path.isfile(account_file):
+                    self.logger.error(
+                        'Accounts file not found: %s' % account_file)
+                    exit(1)
+
+                accounts = read_accounts_yaml(account_file)
+                if not accounts:
+                    self.logger.error('Accounts file %s found, '
+                                      'but was empty.' % account_file)
+                    exit(1)
+
+                account = accounts[0]
+                username = account.get('username')
+                password = account.get('password')
+                tenant_id = account.get('tenant_id')
+                tenant_name = account.get('tenant_name')
+            else:
+                username = conf_file.get('identity', 'username')
+                password = conf_file.get('identity', 'password')
+
+                if self.conf.has_option('identity', 'tenant_id'):
+                    tenant_id = conf_file.get('identity', 'tenant_id')
+                else:
+                    tenant_id = None
+                    tenant_name = conf_file.get('identity', 'tenant_name')
+
             args = {
                 'insecure': self.args.insecure,
-                'username': conf_file.get('identity', 'username'),
-                'password': conf_file.get('identity', 'password')
+                'username': username,
+                'password': password
             }
-
-            if self.conf.has_option('identity', 'tenant_id'):
-                args['tenant_id'] = conf_file.get('identity', 'tenant_id')
+            if tenant_id:
+                args['tenant_id'] = tenant_id
             else:
-                args['tenant_name'] = conf_file.get('identity', 'tenant_name')
+                args['tenant_name'] = tenant_name
 
             if auth_version == 'v2':
                 args['auth_url'] = conf_file.get('identity', 'uri')
