@@ -473,11 +473,13 @@ def parse_cli_args(args=None):
                               action='store',
                               required=False,
                               default=os.environ.get(
-                                  'REFSTACK_URL', 'http://refstack.net/api'),
+                                  'REFSTACK_URL',
+                                  'https://refstack.openstack.org/api'),
                               type=str,
                               help='RefStack API URL to upload results to. '
                                    'Defaults to env[REFSTACK_URL] or '
-                                   'http://refstack.net/api if it is not set '
+                                   'https://refstack.openstack.org/'
+                                   'api if it is not set '
                                    '(--url http://localhost:8000).')
 
     network_args.add_argument('-k', '--insecure',
