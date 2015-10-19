@@ -40,45 +40,44 @@ We've created an "easy button" for Ubuntu, Centos, RHEL and openSuSe.
 
 4. Validate your setup by running a short test.
 
-   `./refstack-client test -c <Path of the tempest configuration file to use> -vv -- tempest.api.identity.admin.v2.test_roles`
+   `./refstack-client test -c <Path of the tempest configuration file to use> -v -- tempest.api.identity.admin.v2.test_roles`
 
    or
 
-   `./refstack-client test -c <Path of the tempest configuration file to use> -vv -- tempest.api.identity.v2.test_token`
+   `./refstack-client test -c <Path of the tempest configuration file to use> -v -- tempest.api.identity.v2.test_token`
 
 
 5. Run tests.
 
    To run the entire API test set:
 
-   `./refstack-client test -c <Path of the tempest configuration file to use> -vv`
+   `./refstack-client test -c <Path of the tempest configuration file to use> -v`
 
    To run only those tests specified in a DefCore defined test file:
 
-   `./refstack-client test -c <Path of the tempest configuration file to use> -vv --test-list <Path or URL of test list>`
+   `./refstack-client test -c <Path of the tempest configuration file to use> -v --test-list <Path or URL of test list>`
 
    For example:
 
-   `./refstack-client test -c ~/tempest.conf -vv --test-list https://raw.githubusercontent.com/openstack/defcore/master/2015.05/2015.05.required.txt`
+   `./refstack-client test -c ~/tempest.conf -v --test-list https://raw.githubusercontent.com/openstack/defcore/master/2015.05/2015.05.required.txt`
 
    This will run only the test cases listed in 2015.05.required.txt.
 
    **Note:**
 
-   a. Adding the `-v` option will show the summary output.
-   b. Adding the `-vv` option will show the Tempest test result output.
-   c. Adding the `--upload` option will have your test results be uploaded to the
+   a. Adding the `-v` option will show the Tempest test result output.
+   b. Adding the `--upload` option will have your test results be uploaded to the
       default RefStack API server or the server specified by `--url`.
-   d. Adding the `--test-list` option will allow you to specify the file path or URL of
+   c. Adding the `--test-list` option will allow you to specify the file path or URL of
       a test list text file. This test list should contain specific test cases that
       should be tested. Tests lists passed in using this argument will be normalized
       with the current Tempest evironment to eliminate any attribute mismatches.
-   e. Adding the `--url` option will allow you to change where test results should
+   d. Adding the `--url` option will allow you to change where test results should
       be uploaded.
-   f. Adding the `-r` option with a string will prefix the JSON result file with the
+   e. Adding the `-r` option with a string will prefix the JSON result file with the
       given string (e.g. '-r my-test' will yield a result file like
       'my-test-0.json').
-   g. Adding `--` enables you to pass arbitary arguments to the Tempest runner.
+   f. Adding `--` enables you to pass arbitary arguments to the Tempest runner.
       After the first `--`, all other subsequent arguments will be passed to
       the Tempest runner as is. This is mainly used for quick verification of the
       target test cases. (e.g. `-- tempest.api.identity.v2.test_token`)

@@ -75,12 +75,13 @@ class RefstackClient:
         self.args = args
         self.tempest_dir = '.tempest'
 
-        if self.args.verbose > 1:
+        # set default log level to INFO.
+        if self.args.silent:
+            self.logger.setLevel(logging.WARNING)
+        elif self.args.verbose > 0:
             self.logger.setLevel(logging.DEBUG)
-        elif self.args.verbose == 1:
-            self.logger.setLevel(logging.INFO)
         else:
-            self.logger.setLevel(logging.ERROR)
+            self.logger.setLevel(logging.INFO)
 
     def _prep_test(self):
         '''Prepare a tempest test against a cloud.'''
@@ -317,7 +318,7 @@ class RefstackClient:
             cmd += ['--', "tempest.api"]
 
         # If there were two verbose flags, show tempest results.
-        if self.args.verbose > 1:
+        if self.args.verbose > 0:
             stderr = None
         else:
             # Suppress tempest results output. Note that testr prints
@@ -456,10 +457,14 @@ def parse_cli_args(args=None):
 
     # Arguments that go with all subcommands.
     shared_args = argparse.ArgumentParser(add_help=False)
+    group = shared_args.add_mutually_exclusive_group()
+    group.add_argument('-s', '--silent',
+                       action='store_true',
+                       help='Suppress output except warnings and errors.')
 
-    shared_args.add_argument('-v', '--verbose',
-                             action='count',
-                             help='Show verbose output.')
+    group.add_argument('-v', '--verbose',
+                       action='count',
+                       help='Show verbose output.')
 
     shared_args.add_argument('-y',
                              action='store_true',

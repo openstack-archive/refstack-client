@@ -55,6 +55,8 @@ class TestRefstackClient(unittest.TestCase):
         argv = [command]
         if kwargs.get('verbose', None):
             argv.append(kwargs.get('verbose', None))
+        if kwargs.get('silent', None):
+            argv.append(kwargs.get('silent', None))
         argv.extend(['--url', 'http://127.0.0.1', '-y'])
         if kwargs.get('priv_key', None):
             argv.extend(('-i', kwargs.get('priv_key', None)))
@@ -63,7 +65,6 @@ class TestRefstackClient(unittest.TestCase):
                 ('-c', kwargs.get('conf_file_name', self.conf_file_name)))
             if kwargs.get('test_cases', None):
                 argv.extend(('--', kwargs.get('test_cases', None)))
-
         return argv
 
     def mock_keystone(self):
@@ -107,19 +108,32 @@ class TestRefstackClient(unittest.TestCase):
         client = rc.RefstackClient(args)
         client.tempest_dir = self.test_path
         client._prep_test()
-        self.assertEqual(client.logger.level, logging.ERROR)
+        self.assertEqual(client.logger.level, logging.INFO)
 
         args = rc.parse_cli_args(self.mock_argv(verbose='-v'))
         client = rc.RefstackClient(args)
         client.tempest_dir = self.test_path
         client._prep_test()
-        self.assertEqual(client.logger.level, logging.INFO)
+        self.assertEqual(client.logger.level, logging.DEBUG)
 
         args = rc.parse_cli_args(self.mock_argv(verbose='-vv'))
         client = rc.RefstackClient(args)
         client.tempest_dir = self.test_path
         client._prep_test()
         self.assertEqual(client.logger.level, logging.DEBUG)
+
+        args = rc.parse_cli_args(self.mock_argv(silent='-s'))
+        client = rc.RefstackClient(args)
+        client.tempest_dir = self.test_path
+        client._prep_test()
+        self.assertEqual(client.logger.level, logging.WARNING)
+
+        args = rc.parse_cli_args(self.mock_argv(silent='-s'))
+        args = rc.parse_cli_args(self.mock_argv(verbose='-v'))
+        client = rc.RefstackClient(args)
+        client.tempest_dir = self.test_path
+        client._prep_test()
+        self.assertRaises(SystemExit, client.__init__(args))
 
     def test_get_next_stream_subunit_output_file(self):
         """
