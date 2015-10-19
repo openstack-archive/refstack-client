@@ -93,6 +93,33 @@ class TestRefstackClient(unittest.TestCase):
             return_value=self.mock_ks3_client
         )
 
+    def mock_keystone_with_wrong_service(self):
+        """
+        Mock the Keystone client methods.
+        """
+        self.mock_identity_service_v2 = {'type': 'identity',
+                                         'endpoints': []}
+        self.mock_identity_service_v3 = {'type': 'identity',
+                                         'id': None}
+        self.mock_ks2_client = MagicMock(
+            name='ks_client',
+            **{'auth_ref':
+               {'serviceCatalog': [self.mock_identity_service_v2]}}
+        )
+        self.mock_ks3_client = MagicMock(
+            name='ks_client',
+            **{'auth_ref':
+               {'catalog': [self.mock_identity_service_v3]}}
+        )
+        self.ks2_client_builder = self.patch(
+            'refstack_client.refstack_client.ksclient2.Client',
+            return_value=self.mock_ks2_client
+        )
+        self.ks3_client_builder = self.patch(
+            'refstack_client.refstack_client.ksclient3.Client',
+            return_value=self.mock_ks3_client
+        )
+
     def setUp(self):
         """
         Test case setup
@@ -314,6 +341,34 @@ class TestRefstackClient(unittest.TestCase):
             password='test', auth_url='0.0.0.0:35357/v3', insecure=False
         )
         self.assertEqual('test-id', cpid)
+
+    def test_get_cpid_from_keystone_v2_exits(self):
+        """
+        Test getting the CPID from keystone API v2 exits with wrong service.
+        """
+        argv = self.mock_argv()
+        args = rc.parse_cli_args(argv)
+        client = rc.RefstackClient(args)
+        client.tempest_dir = self.test_path
+        client._prep_test()
+        self.mock_keystone_with_wrong_service()
+        with self.assertRaises(RuntimeError):
+            client._get_cpid_from_keystone(client.conf)
+
+    def test_get_cpid_from_keystone_v3_exits(self):
+        """
+        Test getting the CPID from keystone API v3 exits.
+        """
+        args = rc.parse_cli_args(self.mock_argv())
+        client = rc.RefstackClient(args)
+        client.tempest_dir = self.test_path
+        client._prep_test()
+        client.conf.remove_option('identity', 'tenant_id')
+        client.conf.set('identity', 'tenant_name', 'tenant_name')
+        client.conf.set('identity-feature-enabled', 'api_v3', 'true')
+        self.mock_keystone_with_wrong_service()
+        with self.assertRaises(RuntimeError):
+            client._get_cpid_from_keystone(client.conf)
 
     def test_form_result_content(self):
         """
