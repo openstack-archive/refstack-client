@@ -190,7 +190,15 @@ class RefstackClient:
                 token = client.auth_ref
                 for service in token['serviceCatalog']:
                     if service['type'] == 'identity':
-                        return service['endpoints'][0]['id']
+                        if 'endpoints' in service and \
+                            len(service['endpoints']) > 0:
+                            return service['endpoints'][0]['id']
+                        else:
+                            message = "Unable to retrieve CPID. " + \
+                                      "Identity service endpoint was " + \
+                                      "not found in Keystone v2 catalog."
+                            self.logger.error(message)
+                            raise RuntimeError(message)
             elif auth_version == 'v3':
                 args['auth_url'] = conf_file.get('identity', 'uri_v3')
                 if conf_file.has_option('identity', 'domain_name'):
@@ -204,8 +212,15 @@ class RefstackClient:
                 client = ksclient3.Client(**args)
                 token = client.auth_ref
                 for service in token['catalog']:
-                    if service['type'] == 'identity':
-                        return service['id']
+                    if service['type'] == 'identity' and \
+                        'id' in service and service['id'] is not None:
+                            return service['id']
+                    else:
+                        message = "Unable to retrive CPID. " + \
+                                  "Identity service ID was not " + \
+                                  "found in Keystone v3 catalog."
+                        self.logger.error(message)
+                        raise RuntimeError(message)
             else:
                 raise ValueError('Auth_version %s is unsupported'
                                  '' % auth_version)
