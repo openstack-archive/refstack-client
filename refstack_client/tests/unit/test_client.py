@@ -94,33 +94,6 @@ class TestRefstackClient(unittest.TestCase):
             return_value=self.mock_ks3_client
         )
 
-    def mock_keystone_with_wrong_service(self):
-        """
-        Mock the Keystone client methods.
-        """
-        self.mock_identity_service_v2 = {'type': 'identity',
-                                         'endpoints': []}
-        self.mock_identity_service_v3 = {'type': 'identity',
-                                         'id': None}
-        self.mock_ks2_client = MagicMock(
-            name='ks_client',
-            **{'auth_ref':
-               {'serviceCatalog': [self.mock_identity_service_v2]}}
-        )
-        self.mock_ks3_client = MagicMock(
-            name='ks_client',
-            **{'auth_ref':
-               {'catalog': [self.mock_identity_service_v3]}}
-        )
-        self.ks2_client_builder = self.patch(
-            'refstack_client.refstack_client.ksclient2.Client',
-            return_value=self.mock_ks2_client
-        )
-        self.ks3_client_builder = self.patch(
-            'refstack_client.refstack_client.ksclient3.Client',
-            return_value=self.mock_ks3_client
-        )
-
     def setUp(self):
         """
         Test case setup
@@ -356,22 +329,70 @@ class TestRefstackClient(unittest.TestCase):
         )
         self.assertEqual('test-id', cpid)
 
-    def test_get_cpid_from_keystone_v2_exits(self):
+    def test_get_cpid_from_keystone_v2_varying_catalogs(self):
         """
-        Test getting the CPID from keystone API v2 exits with wrong service.
+        Test getting the CPID from keystone API v2 varying catalogs.
         """
         argv = self.mock_argv()
         args = rc.parse_cli_args(argv)
         client = rc.RefstackClient(args)
         client.tempest_dir = self.test_path
         client._prep_test()
-        self.mock_keystone_with_wrong_service()
+
+        # Test when the identity endpoints is empty
+        self.mock_ks2_client = MagicMock(
+            name='ks_client',
+            **{'auth_ref':
+               {'serviceCatalog': [{'type': 'identity', 'endpoints': []}]}}
+        )
+        self.ks2_client_builder = self.patch(
+            'refstack_client.refstack_client.ksclient2.Client',
+            return_value=self.mock_ks2_client
+        )
         with self.assertRaises(RuntimeError):
             client._get_cpid_from_keystone(client.conf)
 
-    def test_get_cpid_from_keystone_v3_exits(self):
+        # Test when the catalog is empty
+        self.mock_ks2_client = MagicMock(
+            name='ks_client',
+            **{'auth_ref': {'serviceCatalog': []}}
+        )
+        self.ks2_client_builder = self.patch(
+            'refstack_client.refstack_client.ksclient2.Client',
+            return_value=self.mock_ks2_client
+        )
+        with self.assertRaises(RuntimeError):
+            client._get_cpid_from_keystone(client.conf)
+
+        # Test when there is no service catalog
+        self.mock_ks2_client = MagicMock(name='ks_client', **{'auth_ref': {}})
+        self.ks2_client_builder = self.patch(
+            'refstack_client.refstack_client.ksclient2.Client',
+            return_value=self.mock_ks2_client
+        )
+        with self.assertRaises(RuntimeError):
+            client._get_cpid_from_keystone(client.conf)
+
+        # Test when catalog has other non-identity services.
+        self.mock_ks2_client = MagicMock(
+            name='ks_client',
+            **{'auth_ref':
+                {'serviceCatalog': [{'type': 'compute',
+                                     'endpoints': [{'id': 'test-id1'}]},
+                                    {'type': 'identity',
+                                     'endpoints': [{'id': 'test-id2'}]}]}
+               }
+        )
+        self.ks2_client_builder = self.patch(
+            'refstack_client.refstack_client.ksclient2.Client',
+            return_value=self.mock_ks2_client
+        )
+        cpid = client._get_cpid_from_keystone(client.conf)
+        self.assertEqual('test-id2', cpid)
+
+    def test_get_cpid_from_keystone_v3_varying_catalogs(self):
         """
-        Test getting the CPID from keystone API v3 exits.
+        Test getting the CPID from keystone API v3 with varying catalogs.
         """
         args = rc.parse_cli_args(self.mock_argv())
         client = rc.RefstackClient(args)
@@ -380,9 +401,54 @@ class TestRefstackClient(unittest.TestCase):
         client.conf.remove_option('identity', 'tenant_id')
         client.conf.set('identity', 'tenant_name', 'tenant_name')
         client.conf.set('identity-feature-enabled', 'api_v3', 'true')
-        self.mock_keystone_with_wrong_service()
+
+        # Test when the identity ID is None.
+        self.mock_ks3_client = MagicMock(
+            name='ks_client',
+            **{'auth_ref': {'catalog': [{'type': 'identity', 'id': None}]}}
+        )
+        self.ks3_client_builder = self.patch(
+            'refstack_client.refstack_client.ksclient3.Client',
+            return_value=self.mock_ks3_client
+        )
         with self.assertRaises(RuntimeError):
             client._get_cpid_from_keystone(client.conf)
+
+        # Test when the catalog is empty.
+        self.mock_ks3_client = MagicMock(
+            name='ks_client',
+            **{'auth_ref': {'catalog': []}}
+        )
+        self.ks3_client_builder = self.patch(
+            'refstack_client.refstack_client.ksclient3.Client',
+            return_value=self.mock_ks3_client
+        )
+        with self.assertRaises(RuntimeError):
+            client._get_cpid_from_keystone(client.conf)
+
+        # Test when there is no service catalog.
+        self.mock_ks3_client = MagicMock(name='ks_client', **{'auth_ref': {}})
+        self.ks3_client_builder = self.patch(
+            'refstack_client.refstack_client.ksclient3.Client',
+            return_value=self.mock_ks3_client
+        )
+        with self.assertRaises(RuntimeError):
+            client._get_cpid_from_keystone(client.conf)
+
+        #Test when catalog has other non-identity services.
+        self.mock_ks3_client = MagicMock(
+            name='ks_client',
+            **{'auth_ref': {'catalog': [{'type': 'compute',
+                                         'id': 'test-id1'},
+                                        {'type': 'identity',
+                                         'id': 'test-id2'}]}}
+        )
+        self.ks3_client_builder = self.patch(
+            'refstack_client.refstack_client.ksclient3.Client',
+            return_value=self.mock_ks3_client
+        )
+        cpid = client._get_cpid_from_keystone(client.conf)
+        self.assertEqual('test-id2', cpid)
 
     def test_form_result_content(self):
         """

@@ -184,46 +184,50 @@ class RefstackClient:
             else:
                 args['tenant_name'] = tenant_name
 
-            if auth_version == 'v2':
-                args['auth_url'] = conf_file.get('identity', 'uri')
-                client = ksclient2.Client(**args)
-                token = client.auth_ref
-                for service in token['serviceCatalog']:
-                    if service['type'] == 'identity':
-                        if 'endpoints' in service and \
-                            len(service['endpoints']) > 0:
-                            return service['endpoints'][0]['id']
-                        else:
-                            message = "Unable to retrieve CPID. " + \
-                                      "Identity service endpoint was " + \
-                                      "not found in Keystone v2 catalog."
-                            self.logger.error(message)
-                            raise RuntimeError(message)
-            elif auth_version == 'v3':
-                args['auth_url'] = conf_file.get('identity', 'uri_v3')
-                if conf_file.has_option('identity', 'domain_name'):
-                    args['project_domain_name'] = conf_file.get('identity',
-                                                                'domain_name')
-                    args['user_domain_name'] = conf_file.get('identity',
-                                                             'domain_name')
-                if conf_file.has_option('identity', 'region'):
-                    args['region_name'] = conf_file.get('identity',
-                                                        'region')
-                client = ksclient3.Client(**args)
-                token = client.auth_ref
-                for service in token['catalog']:
-                    if service['type'] == 'identity' and \
-                        'id' in service and service['id'] is not None:
+            try:
+                if auth_version == 'v2':
+                    args['auth_url'] = conf_file.get('identity', 'uri')
+                    client = ksclient2.Client(**args)
+                    token = client.auth_ref
+                    for service in token['serviceCatalog']:
+                        if service['type'] == 'identity':
+                            if service['endpoints'][0]['id']:
+                                return service['endpoints'][0]['id']
+                    # Raise a key error if 'identity' was not found so that it
+                    # can be caught and have an appropriate error displayed.
+                    raise KeyError
+                elif auth_version == 'v3':
+                    args['auth_url'] = conf_file.get('identity', 'uri_v3')
+                    if conf_file.has_option('identity', 'domain_name'):
+                        args['project_domain_name'] = \
+                            conf_file.get('identity', 'domain_name')
+                        args['user_domain_name'] = conf_file.get('identity',
+                                                                 'domain_name')
+                    if conf_file.has_option('identity', 'region'):
+                        args['region_name'] = conf_file.get('identity',
+                                                            'region')
+                    client = ksclient3.Client(**args)
+                    token = client.auth_ref
+                    for service in token['catalog']:
+                        if service['type'] == 'identity' and service['id']:
                             return service['id']
-                    else:
-                        message = "Unable to retrive CPID. " + \
-                                  "Identity service ID was not " + \
-                                  "found in Keystone v3 catalog."
-                        self.logger.error(message)
-                        raise RuntimeError(message)
-            else:
-                raise ValueError('Auth_version %s is unsupported'
-                                 '' % auth_version)
+                    # Raise a key error if 'identity' was not found. It will
+                    # be caught below as well.
+                    raise KeyError
+                else:
+                    raise ValueError('Auth_version %s is unsupported'
+                                     '' % auth_version)
+            # If a Key or Index Error was raised, one of the expected keys or
+            # indices for retrieving the identity service ID was not found.
+            except (KeyError, IndexError) as e:
+                raise RuntimeError('Unable to retrieve CPID from Keystone %s '
+                                   'catalog. The catalog or the identity '
+                                   'service endpoint was not '
+                                   'found.' % auth_version)
+            except Exception as e:
+                self.logger.error('Problems retreiving CPID from Keystone '
+                                  'using %s endpoint' % auth_version)
+                raise
 
         except ConfigParser.Error as e:
             # Most likely a missing section or option in the config file.
