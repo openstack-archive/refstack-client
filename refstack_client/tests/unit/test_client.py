@@ -841,3 +841,16 @@ class TestRefstackClient(unittest.TestCase):
         pubkey, signature = client._sign_pubkey()
         self.assertTrue(pubkey.startswith('ssh-rsa AAAA'))
         self.assertTrue(signature.startswith('413cb954'))
+
+    def test_set_env_params(self):
+        """
+        Test that the environment variables are correctly set.
+        """
+        args = rc.parse_cli_args(self.mock_argv())
+        client = rc.RefstackClient(args)
+        client.tempest_dir = self.test_path
+        client._prep_test()
+        conf_dir = os.path.abspath(os.path.dirname(self.conf_file_name))
+        conf_file = os.path.basename(self.conf_file_name)
+        self.assertEqual(os.environ.get('TEMPEST_CONFIG_DIR'), conf_dir)
+        self.assertEqual(os.environ.get('TEMPEST_CONFIG'), conf_file)

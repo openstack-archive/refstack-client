@@ -91,6 +91,11 @@ class RefstackClient:
             self.logger.error("Conf file not valid: %s" % self.args.conf_file)
             exit(1)
 
+        # Initialize environment variables with config file info
+        os.environ["TEMPEST_CONFIG_DIR"] = os.path.abspath(
+            os.path.dirname(self.args.conf_file))
+        os.environ["TEMPEST_CONFIG"] = os.path.basename(self.args.conf_file)
+
         # Check that the Tempest directory is an existing directory.
         if not os.path.isdir(self.tempest_dir):
             self.logger.error("Tempest directory given is not a directory or "
