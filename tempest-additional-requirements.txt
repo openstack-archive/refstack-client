@@ -1,0 +1,6 @@
+# This file is a placeholder for additional requirements for external test suites.
+# Add packages that should be installed in tempest venv
+# So tempest can find plugins with additional tests
+# Examples of how to define packages:
+#ec2-api>=1.0.0
+#git+https://github.com/openstack/swift.git@master#egg=swift

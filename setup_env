@@ -150,3 +150,6 @@ rm -rf virtualenv-${VENV_VERSION}
 rm virtualenv-${VENV_VERSION}.tar.gz
 ${WORKDIR}/.venv/bin/pip install -r ${WORKDIR}/requirements.txt
 ${WORKDIR}/.tempest/.venv/bin/pip install -r ${WORKDIR}/.tempest/requirements.txt
+
+# add additional packages to find more tests by tempest
+${WORKDIR}/.tempest/.venv/bin/pip install -r ${WORKDIR}/tempest-additional-requirements.txt
