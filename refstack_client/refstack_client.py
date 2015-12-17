@@ -27,6 +27,7 @@ Tempest configuration file.
 import argparse
 import binascii
 import ConfigParser
+import hashlib
 import itertools
 import json
 import logging
@@ -42,6 +43,7 @@ from keystoneclient.v3 import client as ksclient3
 import requests
 import requests.exceptions
 import six.moves
+from six.moves.urllib import parse
 from subunit_processor import SubunitProcessor
 from list_parser import TestListParser
 import yaml
@@ -225,19 +227,31 @@ class RefstackClient:
             # If a Key or Index Error was raised, one of the expected keys or
             # indices for retrieving the identity service ID was not found.
             except (KeyError, IndexError) as e:
-                raise RuntimeError('Unable to retrieve CPID from Keystone %s '
-                                   'catalog. The catalog or the identity '
-                                   'service endpoint was not '
-                                   'found.' % auth_version)
+                self.logger.warning('Unable to retrieve CPID from Keystone %s '
+                                    'catalog. The catalog or the identity '
+                                    'service endpoint was not '
+                                    'found.' % auth_version)
             except Exception as e:
-                self.logger.error('Problems retreiving CPID from Keystone '
-                                  'using %s endpoint' % auth_version)
-                raise
+                self.logger.warning('Problems retrieving CPID from Keystone '
+                                    'using %s endpoint (%s)' % (auth_version,
+                                    args['auth_url']))
 
+            return self._generate_cpid_from_endpoint(args['auth_url'])
         except ConfigParser.Error as e:
             # Most likely a missing section or option in the config file.
             self.logger.error("Invalid Config File: %s" % e)
             exit(1)
+
+    def _generate_cpid_from_endpoint(self, endpoint):
+        '''This method will md5 hash the hostname of a Keystone endpoint to
+           generate a CPID.'''
+        self.logger.info('Creating hash from endpoint to use as CPID.')
+        url_parts = parse.urlparse(endpoint)
+        if url_parts.scheme not in ('http', 'https'):
+            raise ValueError('Invalid Keystone endpoint format. Make sure '
+                             'the endpoint (%s) includes the URL scheme '
+                             '(i.e. http/https).' % endpoint)
+        return hashlib.md5(url_parts.hostname).hexdigest()
 
     def _form_result_content(self, cpid, duration, results):
         '''This method will create the content for the request. The spec at

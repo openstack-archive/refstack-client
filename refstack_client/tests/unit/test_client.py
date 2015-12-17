@@ -14,6 +14,7 @@
 #    under the License.
 #
 
+import hashlib
 import json
 import logging
 import os
@@ -174,7 +175,8 @@ class TestRefstackClient(unittest.TestCase):
         cpid = client._get_cpid_from_keystone(client.conf)
         self.ks2_client_builder.assert_called_with(
             username='admin', tenant_id='admin_tenant_id',
-            password='test', auth_url='0.0.0.0:35357/v2.0', insecure=False
+            password='test', auth_url='http://0.0.0.0:35357/v2.0',
+            insecure=False
         )
         self.assertEqual('test-id', cpid)
 
@@ -192,7 +194,8 @@ class TestRefstackClient(unittest.TestCase):
         cpid = client._get_cpid_from_keystone(client.conf)
         self.ks2_client_builder.assert_called_with(
             username='admin', tenant_name='tenant_name',
-            password='test', auth_url='0.0.0.0:35357/v2.0', insecure=False
+            password='test', auth_url='http://0.0.0.0:35357/v2.0',
+            insecure=False
         )
         self.assertEqual('test-id', cpid)
 
@@ -214,7 +217,8 @@ class TestRefstackClient(unittest.TestCase):
         cpid = client._get_cpid_from_keystone(client.conf)
         self.ks2_client_builder.assert_called_with(
             username='admin', tenant_name='tenant_name',
-            password='test', auth_url='0.0.0.0:35357/v2.0', insecure=False
+            password='test', auth_url='http://0.0.0.0:35357/v2.0',
+            insecure=False
         )
         self.assertEqual('test-id', cpid)
 
@@ -247,7 +251,8 @@ class TestRefstackClient(unittest.TestCase):
         cpid = client._get_cpid_from_keystone(client.conf)
         self.ks2_client_builder.assert_called_with(
             username='admin', tenant_id='tenant_id',
-            password='test', auth_url='0.0.0.0:35357/v2.0', insecure=False
+            password='test', auth_url='http://0.0.0.0:35357/v2.0',
+            insecure=False
         )
         self.assertEqual('test-id', cpid)
 
@@ -307,7 +312,8 @@ class TestRefstackClient(unittest.TestCase):
         client._get_cpid_from_keystone(client.conf)
         self.ks2_client_builder.assert_called_with(
             username='admin', tenant_id='admin_tenant_id',
-            password='test', auth_url='0.0.0.0:35357/v2.0', insecure=True
+            password='test', auth_url='http://0.0.0.0:35357/v2.0',
+            insecure=True
         )
 
     def test_get_cpid_from_keystone_v3(self):
@@ -325,7 +331,8 @@ class TestRefstackClient(unittest.TestCase):
         cpid = client._get_cpid_from_keystone(client.conf)
         self.ks3_client_builder.assert_called_with(
             username='admin', tenant_name='tenant_name',
-            password='test', auth_url='0.0.0.0:35357/v3', insecure=False
+            password='test', auth_url='http://0.0.0.0:35357/v3',
+            insecure=False
         )
         self.assertEqual('test-id', cpid)
 
@@ -339,6 +346,8 @@ class TestRefstackClient(unittest.TestCase):
         client.tempest_dir = self.test_path
         client._prep_test()
 
+        client._generate_cpid_from_endpoint = MagicMock()
+
         # Test when the identity endpoints is empty
         self.mock_ks2_client = MagicMock(
             name='ks_client',
@@ -349,8 +358,11 @@ class TestRefstackClient(unittest.TestCase):
             'refstack_client.refstack_client.ksclient2.Client',
             return_value=self.mock_ks2_client
         )
-        with self.assertRaises(RuntimeError):
-            client._get_cpid_from_keystone(client.conf)
+        client._get_cpid_from_keystone(client.conf)
+        # Failover CPID should be generated.
+        client._generate_cpid_from_endpoint.assert_called_with(
+            'http://0.0.0.0:35357/v2.0'
+        )
 
         # Test when the catalog is empty
         self.mock_ks2_client = MagicMock(
@@ -361,8 +373,11 @@ class TestRefstackClient(unittest.TestCase):
             'refstack_client.refstack_client.ksclient2.Client',
             return_value=self.mock_ks2_client
         )
-        with self.assertRaises(RuntimeError):
-            client._get_cpid_from_keystone(client.conf)
+        client._get_cpid_from_keystone(client.conf)
+        # Failover CPID should be generated.
+        client._generate_cpid_from_endpoint.assert_called_with(
+            'http://0.0.0.0:35357/v2.0'
+        )
 
         # Test when there is no service catalog
         self.mock_ks2_client = MagicMock(name='ks_client', **{'auth_ref': {}})
@@ -370,8 +385,11 @@ class TestRefstackClient(unittest.TestCase):
             'refstack_client.refstack_client.ksclient2.Client',
             return_value=self.mock_ks2_client
         )
-        with self.assertRaises(RuntimeError):
-            client._get_cpid_from_keystone(client.conf)
+        client._get_cpid_from_keystone(client.conf)
+        # Failover CPID should be generated.
+        client._generate_cpid_from_endpoint.assert_called_with(
+            'http://0.0.0.0:35357/v2.0'
+        )
 
         # Test when catalog has other non-identity services.
         self.mock_ks2_client = MagicMock(
@@ -402,6 +420,8 @@ class TestRefstackClient(unittest.TestCase):
         client.conf.set('identity', 'tenant_name', 'tenant_name')
         client.conf.set('identity-feature-enabled', 'api_v3', 'true')
 
+        client._generate_cpid_from_endpoint = MagicMock()
+
         # Test when the identity ID is None.
         self.mock_ks3_client = MagicMock(
             name='ks_client',
@@ -411,8 +431,11 @@ class TestRefstackClient(unittest.TestCase):
             'refstack_client.refstack_client.ksclient3.Client',
             return_value=self.mock_ks3_client
         )
-        with self.assertRaises(RuntimeError):
-            client._get_cpid_from_keystone(client.conf)
+        client._get_cpid_from_keystone(client.conf)
+        # Failover CPID should be generated.
+        client._generate_cpid_from_endpoint.assert_called_with(
+            'http://0.0.0.0:35357/v3'
+        )
 
         # Test when the catalog is empty.
         self.mock_ks3_client = MagicMock(
@@ -423,8 +446,11 @@ class TestRefstackClient(unittest.TestCase):
             'refstack_client.refstack_client.ksclient3.Client',
             return_value=self.mock_ks3_client
         )
-        with self.assertRaises(RuntimeError):
-            client._get_cpid_from_keystone(client.conf)
+        client._get_cpid_from_keystone(client.conf)
+        # Failover CPID should be generated.
+        client._generate_cpid_from_endpoint.assert_called_with(
+            'http://0.0.0.0:35357/v3'
+        )
 
         # Test when there is no service catalog.
         self.mock_ks3_client = MagicMock(name='ks_client', **{'auth_ref': {}})
@@ -432,8 +458,11 @@ class TestRefstackClient(unittest.TestCase):
             'refstack_client.refstack_client.ksclient3.Client',
             return_value=self.mock_ks3_client
         )
-        with self.assertRaises(RuntimeError):
-            client._get_cpid_from_keystone(client.conf)
+        client._get_cpid_from_keystone(client.conf)
+        # Failover CPID should be generated.
+        client._generate_cpid_from_endpoint.assert_called_with(
+            'http://0.0.0.0:35357/v3'
+        )
 
         #Test when catalog has other non-identity services.
         self.mock_ks3_client = MagicMock(
@@ -449,6 +478,19 @@ class TestRefstackClient(unittest.TestCase):
         )
         cpid = client._get_cpid_from_keystone(client.conf)
         self.assertEqual('test-id2', cpid)
+
+    def test_generate_cpid_from_endpoint(self):
+        """
+        Test that an endpoint's hostname is properly hashed.
+        """
+        args = rc.parse_cli_args(self.mock_argv())
+        client = rc.RefstackClient(args)
+        cpid = client._generate_cpid_from_endpoint('http://some.url:5000/v2')
+        expected = hashlib.md5('some.url').hexdigest()
+        self.assertEqual(expected, cpid)
+
+        with self.assertRaises(ValueError):
+            client._generate_cpid_from_endpoint('some.url:5000/v2')
 
     def test_form_result_content(self):
         """
