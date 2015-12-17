@@ -97,6 +97,12 @@ We've created an "easy button" for Ubuntu, Centos, RHEL and openSuSe.
    `upload` command, you can also override the RefStack API server uploaded to
    with the `--url` option.
 
+   Alternatively, you can use the 'upload-subunit' command to upload results
+   using an existing subunit file. This requires that you pass in the Keystone
+   endpoint URL for the cloud that was tested to generate the subunit data:
+
+   `./refstack-client upload-subunit --keystone-endpoint http://some.url:5000/v3 <Path of subunit file>`
+
    **Note:**
 
    a. Adding `-i <path-to-private-key>` option will upload test results with

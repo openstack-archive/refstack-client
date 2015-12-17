@@ -551,6 +551,26 @@ class TestRefstackClient(unittest.TestCase):
         mock_input.return_value = 'yes'
         self.assertTrue(client._user_query('42?'))
 
+    def test_upload_prompt(self):
+        """
+        Test the _upload_prompt method.
+        """
+        client = rc.RefstackClient(rc.parse_cli_args(self.mock_argv()))
+
+        # When user says yes.
+        client._user_query = MagicMock(return_value=True)
+        client.post_results = MagicMock()
+        client._upload_prompt({'some': 'data'})
+        client.post_results.assert_called_with(
+            'http://127.0.0.1', {'some': 'data'}, sign_with=None
+        )
+
+        # When user says no.
+        client._user_query = MagicMock(return_value=False)
+        client.post_results = MagicMock()
+        client._upload_prompt({'some': 'data'})
+        self.assertFalse(client.post_results.called)
+
     def test_post_results(self):
         """
         Test the post_results method, ensuring a requests call is made.
@@ -799,6 +819,31 @@ class TestRefstackClient(unittest.TestCase):
         expected_json = {
             'duration_seconds': 0,
             'cpid': 'test-id',
+            'results': [
+                {'name': 'tempest.passed.test'},
+                {'name': 'tempest.tagged_passed.test',
+                 'uuid': '0146f675-ffbd-4208-b3a4-60eb628dbc5e'}
+            ]
+        }
+        client.post_results.assert_called_with('http://127.0.0.1',
+                                               expected_json,
+                                               sign_with='rsa_key')
+
+    def test_subunit_upload(self):
+        """
+        Test that the subunit upload command runs as expected.
+        """
+        upload_file_path = self.test_path + "/.testrepository/0"
+        args = rc.parse_cli_args(
+            self.mock_argv(command='upload-subunit', priv_key='rsa_key')
+            + ['--keystone-endpoint', 'http://0.0.0.0:5000/v2.0']
+            + [upload_file_path])
+        client = rc.RefstackClient(args)
+        client.post_results = MagicMock()
+        client.upload_subunit()
+        expected_json = {
+            'duration_seconds': 0,
+            'cpid': hashlib.md5('0.0.0.0').hexdigest(),
             'results': [
                 {'name': 'tempest.passed.test'},
                 {'name': 'tempest.tagged_passed.test',

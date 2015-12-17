@@ -280,6 +280,12 @@ class RefstackClient:
         else:
             return inp.lower() in ('yes', 'y')
 
+    def _upload_prompt(self, upload_content):
+        if self._user_query('Test results will be uploaded to %s. '
+                            'Ok?' % self.args.url):
+            self.post_results(self.args.url, upload_content,
+                              sign_with=self.args.priv_key)
+
     def get_passed_tests(self, result_file):
         '''Get a list of tests IDs that passed Tempest from a subunit file.'''
         subunit_processor = SubunitProcessor(result_file)
@@ -407,10 +413,23 @@ class RefstackClient:
         json_file = open(self.upload_file)
         json_data = json.load(json_file)
         json_file.close()
-        if self._user_query('Test results will be uploaded to %s. '
-                            'Ok?' % self.args.url):
-            self.post_results(self.args.url, json_data,
-                              sign_with=self.args.priv_key)
+        self._upload_prompt(json_data)
+
+    def upload_subunit(self):
+        '''Perform upload to RefStack URL from a subunit file.'''
+        self._prep_upload()
+
+        cpid = self._generate_cpid_from_endpoint(self.args.keystone_endpoint)
+        # Forgo the duration for direct subunit uploads.
+        duration = 0
+
+        # Formulate JSON from subunit
+        results = self.get_passed_tests(self.upload_file)
+        self.logger.info('Number of passed tests in given subunit '
+                         'file: %d ' % len(results))
+
+        content = self._form_result_content(cpid, duration, results)
+        self._upload_prompt(content)
 
     def yield_results(self, url, start_page=1,
                       start_date='', end_date='', cpid=''):
@@ -542,7 +561,7 @@ def parse_cli_args(args=None):
     # Upload command
     parser_upload = subparsers.add_parser(
         'upload', parents=[shared_args, network_args],
-        help='Upload an existing result file.'
+        help='Upload an existing result JSON file.'
     )
 
     parser_upload.add_argument('file',
@@ -550,6 +569,28 @@ def parse_cli_args(args=None):
                                help='Path of JSON results file.')
 
     parser_upload.set_defaults(func="upload")
+
+    # Upload-subunit command
+    parser_subunit_upload = subparsers.add_parser(
+        'upload-subunit', parents=[shared_args, network_args],
+        help='Upload results from a subunit file.'
+    )
+
+    parser_subunit_upload.add_argument('file',
+                                       type=str,
+                                       help='Path of subunit file.')
+
+    parser_subunit_upload.add_argument('--keystone-endpoint',
+                                       action='store',
+                                       required=True,
+                                       dest='keystone_endpoint',
+                                       type=str,
+                                       help='The Keystone URL of the cloud '
+                                            'the subunit results belong to. '
+                                            'This is used to generate a Cloud '
+                                            'Provider ID.')
+
+    parser_subunit_upload.set_defaults(func="upload_subunit")
 
     # Test command
     parser_test = subparsers.add_parser(
