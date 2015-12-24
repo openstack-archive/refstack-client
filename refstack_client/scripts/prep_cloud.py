@@ -26,7 +26,8 @@
 import ConfigParser
 import os
 import tarfile
-import urllib2
+
+from six.moves.urllib import request as urlreq
 
 # Default client libs
 import glanceclient as glance_client
@@ -296,7 +297,7 @@ def download_and_register_uec_images(image_client, download_url,
     basename = os.path.basename(download_url)
     path = os.path.join(download_folder, basename)
 
-    request = urllib2.urlopen(download_url)
+    request = urlreq.urlopen(download_url)
 
     # First, download the file
     with open(path, "wb") as fp:
