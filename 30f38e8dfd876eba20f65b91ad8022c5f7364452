@@ -1,0 +1,9 @@
+Code-Review+2: Sergey Slipushenko <sslypushenko@mirantis.com>
+Code-Review+2: Paul Van Eck <pvaneck@us.ibm.com>
+Workflow+1: Paul Van Eck <pvaneck@us.ibm.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Mon, 04 Jan 2016 19:18:55 +0000
+Reviewed-on: https://review.openstack.org/261201
+Project: openstack/refstack-client
+Branch: refs/heads/master
