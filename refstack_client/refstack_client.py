@@ -38,8 +38,6 @@ import time
 from Crypto.Hash import SHA256
 from Crypto.PublicKey import RSA
 from Crypto.Signature import PKCS1_v1_5
-from keystoneclient.v2_0 import client as ksclient2
-from keystoneclient.v3 import client as ksclient3
 import requests
 import requests.exceptions
 import six.moves
@@ -140,8 +138,9 @@ class RefstackClient:
 
         return os.path.join(tempest_dir, '.testrepository', subunit_file)
 
-    def _get_cpid_from_keystone(self, conf_file):
-        '''This will get the Keystone service ID which is used as the CPID.'''
+    def _get_keystone_config(self, conf_file):
+        '''This will get and return the keystone configs
+        from config file.'''
         try:
             # Prefer Keystone V3 API if it is enabled
             auth_version = (
@@ -151,7 +150,15 @@ class RefstackClient:
                                                   'api_v3')
                          and conf_file.has_option('identity', 'uri_v3'))
                 else 'v2')
-
+            if auth_version == 'v2':
+                auth_url = '%s/tokens' % (conf_file.get('identity', 'uri')
+                                          .rstrip('/'))
+            elif auth_version == 'v3':
+                auth_url = '%s/auth/tokens' % (conf_file.get('identity',
+                                               'uri_v3').rstrip('/'))
+            domain_name = 'Default'
+            if conf_file.has_option('identity', 'domain_name'):
+                domain_name = conf_file.get('identity', 'domain_name')
             if conf_file.has_option('auth', 'test_accounts_file'):
                 account_file = os.path.expanduser(
                     conf_file.get('auth', 'test_accounts_file'))
@@ -165,12 +172,17 @@ class RefstackClient:
                     self.logger.error('Accounts file %s found, '
                                       'but was empty.' % account_file)
                     exit(1)
-
                 account = accounts[0]
                 username = account.get('username')
                 password = account.get('password')
                 tenant_id = account.get('tenant_id')
                 tenant_name = account.get('tenant_name')
+                return {'auth_version': auth_version,
+                        'auth_url': auth_url,
+                        'domain_name': domain_name,
+                        'username': username, 'password': password,
+                        'tenant_id': tenant_id, 'tenant_name': tenant_name
+                        }
             else:
                 username = conf_file.get('identity', 'username')
                 password = conf_file.get('identity', 'password')
@@ -179,68 +191,106 @@ class RefstackClient:
                     tenant_id = conf_file.get('identity', 'tenant_id')
                 else:
                     tenant_id = None
-                    tenant_name = conf_file.get('identity', 'tenant_name')
-
-            args = {
-                'insecure': self.args.insecure,
-                'username': username,
-                'password': password
-            }
-            if tenant_id:
-                args['tenant_id'] = tenant_id
-            else:
-                args['tenant_name'] = tenant_name
-
-            try:
-                if auth_version == 'v2':
-                    args['auth_url'] = conf_file.get('identity', 'uri')
-                    client = ksclient2.Client(**args)
-                    token = client.auth_ref
-                    for service in token['serviceCatalog']:
-                        if service['type'] == 'identity':
-                            if service['endpoints'][0]['id']:
-                                return service['endpoints'][0]['id']
-                    # Raise a key error if 'identity' was not found so that it
-                    # can be caught and have an appropriate error displayed.
-                    raise KeyError
-                elif auth_version == 'v3':
-                    args['auth_url'] = conf_file.get('identity', 'uri_v3')
-                    if conf_file.has_option('identity', 'domain_name'):
-                        args['project_domain_name'] = \
-                            conf_file.get('identity', 'domain_name')
-                        args['user_domain_name'] = conf_file.get('identity',
-                                                                 'domain_name')
-                    if conf_file.has_option('identity', 'region'):
-                        args['region_name'] = conf_file.get('identity',
-                                                            'region')
-                    client = ksclient3.Client(**args)
-                    token = client.auth_ref
-                    for service in token['catalog']:
-                        if service['type'] == 'identity' and service['id']:
-                            return service['id']
-                    # Raise a key error if 'identity' was not found. It will
-                    # be caught below as well.
-                    raise KeyError
-                else:
-                    raise ValueError('Auth_version %s is unsupported'
-                                     '' % auth_version)
-            # If a Key or Index Error was raised, one of the expected keys or
-            # indices for retrieving the identity service ID was not found.
-            except (KeyError, IndexError) as e:
-                self.logger.warning('Unable to retrieve CPID from Keystone %s '
-                                    'catalog. The catalog or the identity '
-                                    'service endpoint was not '
-                                    'found.' % auth_version)
-            except Exception as e:
-                self.logger.warning('Problems retrieving CPID from Keystone '
-                                    'using %s endpoint (%s)' % (auth_version,
-                                    args['auth_url']))
-
-            return self._generate_cpid_from_endpoint(args['auth_url'])
+                tenant_name = conf_file.get('identity', 'tenant_name')
+                return {'auth_version': auth_version,
+                        'auth_url': auth_url,
+                        'domain_name': domain_name,
+                        'username': username, 'password': password,
+                        'tenant_id': tenant_id, 'tenant_name': tenant_name}
         except ConfigParser.Error as e:
             # Most likely a missing section or option in the config file.
             self.logger.error("Invalid Config File: %s" % e)
             exit(1)
+
+    def _generate_keystone_data(self, auth_config):
+        '''This will generate data for http post to keystone
+        API from auth_config.'''
+        auth_version = auth_config['auth_version']
+        auth_url = auth_config['auth_url']
+        if auth_version == 'v2':
+            password_credential = {'username': auth_config['username'],
+                                   'password': auth_config['password']}
+            if auth_config['tenant_id']:
+                data = {
+                    'auth': {
+                        'tenantId': auth_config['tenant_id'],
+                        'passwordCredentials': password_credential
+                    }
+                }
+            else:
+                data = {
+                    'auth': {
+                        'tenantName': auth_config['tenant_name'],
+                        'passwordCredentials': password_credential
+                    }
+                }
+            return auth_version, auth_url, data
+        elif auth_version == 'v3':
+            identity = {'methods': ['password'], 'password':
+                        {'user': {'name': auth_config['username'],
+                         'domain': {
+                             'name': auth_config['domain_name']
+                         },
+                        'password': auth_config['password']}}}
+            data = {
+                'auth': {
+                    'identity': identity,
+                    'scope': {
+                        'project': {
+                            'name': auth_config['username'],
+                            'domain': {'name': auth_config['domain_name']}
+                        }
+                    }
+                }
+            }
+            return auth_version, auth_url, data
+
+    def _get_cpid_from_keystone(self, auth_version, auth_url, content):
+        '''This will get the Keystone service ID which is used as the CPID.'''
+        try:
+            headers = {'content-type': 'application/json'}
+            response = requests.post(auth_url,
+                                     data=json.dumps(content),
+                                     headers=headers,
+                                     verify=not self.args.insecure)
+            rsp = response.json()
+            if response.status_code in (200, 203):
+                # keystone API v2 response.
+                access = rsp['access']
+                for service in access['serviceCatalog']:
+                    if service['type'] == 'identity':
+                        if service['endpoints'][0]['id']:
+                            return service['endpoints'][0]['id']
+                # Raise a key error if 'identity' was not found so that it
+                # can be caught and have an appropriate error displayed.
+                raise KeyError
+            elif response.status_code == 201:
+                # keystone API v3 response.
+                token = rsp['token']
+                for service in token['catalog']:
+                    if service['type'] == 'identity' and service['id']:
+                        return service['id']
+                # Raise a key error if 'identity' was not found.
+                # It will be caught below as well.
+                raise KeyError
+            else:
+                message = ('Invalid request with error '
+                           'code: %s. Error message: %s'
+                           '' % (rsp['error']['code'],
+                           rsp['error']['message']))
+                raise requests.exceptions.HTTPError(message)
+            # If a Key or Index Error was raised, one of the expected keys or
+            # indices for retrieving the identity service ID was not found.
+        except (KeyError, IndexError) as e:
+            self.logger.warning('Unable to retrieve CPID from Keystone %s '
+                                'catalog. The catalog or the identity '
+                                'service endpoint was not '
+                                'found.' % auth_version)
+        except Exception as e:
+            self.logger.warning('Problems retrieving CPID from Keystone '
+                                'using %s endpoint (%s) with error (%s)'
+                                % (auth_version, auth_url, e))
+        return self._generate_cpid_from_endpoint(auth_url)
 
     def _generate_cpid_from_endpoint(self, endpoint):
         '''This method will md5 hash the hostname of a Keystone endpoint to
@@ -333,7 +383,10 @@ class RefstackClient:
         self._prep_test()
         results_file = self._get_next_stream_subunit_output_file(
             self.tempest_dir)
-        cpid = self._get_cpid_from_keystone(self.conf)
+        keystone_config = self._get_keystone_config(self.conf)
+        auth_version, auth_url, content = \
+            self._generate_keystone_data(keystone_config)
+        cpid = self._get_cpid_from_keystone(auth_version, auth_url, content)
 
         self.logger.info("Starting Tempest test...")
         start_time = time.time()
