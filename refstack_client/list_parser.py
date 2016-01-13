@@ -50,6 +50,7 @@ class TestListParser(object):
         (stdout, stderr) = process.communicate()
 
         if process.returncode != 0:
+            self.logger.error(stdout)
             self.logger.error(stderr)
             raise subprocess.CalledProcessError(process.returncode,
                                                 ' '.join(cmd))
