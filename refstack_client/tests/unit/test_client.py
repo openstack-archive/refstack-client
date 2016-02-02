@@ -24,8 +24,6 @@ import httmock
 import mock
 from mock import MagicMock
 import unittest
-import requests
-
 
 import refstack_client.refstack_client as rc
 import refstack_client.list_parser as lp
@@ -274,35 +272,37 @@ class TestRefstackClient(unittest.TestCase):
         auth_version, auth_url, content = \
             client._generate_keystone_data(configs)
         client._generate_cpid_from_endpoint = MagicMock()
-        requests.post = MagicMock()
-         # Test when the identity ID is None.
-        ks3_ID_None = {'auth_ref': {'catalog':
-                                    [{'type': 'identity', 'id': None}]}}
 
-        @httmock.urlmatch(netloc=r'(.*\.)?127.0.0.1$', path='/v3/auth/tokens')
-        def keystone_api_v3_mock(auth_version, url, request):
-            return ks3_ID_None
+        # Test when the identity ID is None.
+        ks3_ID_None = {'token': {'catalog':
+                                 [{'type': 'identity', 'id': None}]}}
+
+        @httmock.all_requests
+        def keystone_api_v3_mock(url, request):
+            return httmock.response(201, ks3_ID_None)
         with httmock.HTTMock(keystone_api_v3_mock):
             client._get_cpid_from_keystone(auth_version, auth_url, content)
             client._generate_cpid_from_endpoint.assert_called_with(auth_url)
 
         # Test when the catalog is empty.
-        ks3_catalog_empty = {'auth_ref': {'catalog': []}}
+        ks3_catalog_empty = {'token': {'catalog': []}}
+        client._generate_cpid_from_endpoint = MagicMock()
 
-        @httmock.urlmatch(netloc=r'(.*\.)?127.0.0.1$', path='/v3/auth/tokens')
-        def keystone_api_v3_mock(auth_version, url, request):
-            return ks3_catalog_empty
-        with httmock.HTTMock(keystone_api_v3_mock):
+        @httmock.all_requests
+        def keystone_api_v3_mock2(url, request):
+            return httmock.response(201, ks3_catalog_empty)
+        with httmock.HTTMock(keystone_api_v3_mock2):
             client._get_cpid_from_keystone(auth_version, auth_url, content)
             client._generate_cpid_from_endpoint.assert_called_with(auth_url)
 
         # Test when there is no service catalog.
-        ks3_no_catalog = {'auth_ref': {}}
+        ks3_no_catalog = {'token': {}}
+        client._generate_cpid_from_endpoint = MagicMock()
 
-        @httmock.urlmatch(netloc=r'(.*\.)?127.0.0.1$', path='/v3/auth/tokens')
-        def keystone_api_v3_mock(auth_version, url, request):
-            return ks3_no_catalog
-        with httmock.HTTMock(keystone_api_v3_mock):
+        @httmock.all_requests
+        def keystone_api_v3_mock3(url, request):
+            return httmock.response(201, ks3_no_catalog)
+        with httmock.HTTMock(keystone_api_v3_mock3):
             client._get_cpid_from_keystone(auth_version, auth_url, content)
             client._generate_cpid_from_endpoint.assert_called_with(auth_url)
 
@@ -311,17 +311,17 @@ class TestRefstackClient(unittest.TestCase):
                                         'id': 'test-id1'},
                                         {'type': 'identity',
                                          'id': 'test-id2'}]}}
-        headers = {'content-type': 'application/json'}
+        client._generate_cpid_from_endpoint = MagicMock()
 
-        @httmock.urlmatch(netloc=r'(.*\.)?127.0.0.1$', path='/v3/auth/tokens')
-        def keystone_api_v3_mock(auth_version, url, request):
-            return ks3_other_services
-        with httmock.HTTMock(keystone_api_v3_mock):
-            client._get_cpid_from_keystone(auth_version, auth_url, content)
-            requests.post.assert_called_with(auth_url,
-                                             data=json.dumps(content),
-                                             headers=headers,
-                                             verify=True)
+        @httmock.all_requests
+        def keystone_api_v3_mock4(url, request):
+            return httmock.response(201, ks3_other_services)
+        with httmock.HTTMock(keystone_api_v3_mock4):
+            cpid = client._get_cpid_from_keystone(auth_version,
+                                                  auth_url,
+                                                  content)
+            self.assertFalse(client._generate_cpid_from_endpoint.called)
+            self.assertEqual('test-id2', cpid)
 
     def test_get_cpid_from_keystone_failure_handled(self):
         """Test that get cpid from keystone API failure handled."""
