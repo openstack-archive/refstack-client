@@ -9,15 +9,15 @@ function usage {
     echo "Usage: ${SCRIPT_NAME} [OPTION]..."
     echo "Setup RefStack client with test environment"
     echo ""
-    echo "  -h,                      Print this usage message"
-    echo "  -c                       Tempest test runner commit. You can specify SHA or branch here"
-    echo "  -t                       Tempest test runner tag. You can specify tag here"
-    echo "                           If no commit or tag is specified, tempest will be install from commit"
-    echo "                           ${CHECKOUT_POINT}"
+    echo "  -h  Print this usage message"
+    echo "  -c  Tempest test runner commit. You can specify SHA or branch here"
+    echo "  -t  Tempest test runner tag. You can specify tag here"
+    echo "      If no commit or tag is specified, tempest will be install from commit"
+    echo "      ${CHECKOUT_POINT}"
     exit 1
 }
 
-#Check that parameter is a valid tag in tempest repository
+# Check that parameter is a valid tag in tempest repository
 function check_tag {
         tags="$(git tag)"
         for tag in ${tags}; do
@@ -26,7 +26,7 @@ function check_tag {
         return 1
 }
 
-#By default tempest uses from commit 551e1a9701e7e2b3edf6d49a2eaa62b7ab2435ad
+# By default tempest uses from commit 551e1a9701e7e2b3edf6d49a2eaa62b7ab2435ad
 
 while getopts c:t:h FLAG; do
     case ${FLAG} in
@@ -45,9 +45,9 @@ while getopts c:t:h FLAG; do
             ;;
     esac
 done
-shift $((OPTIND-1))  #This tells getopts to move on to the next argument.
+shift $((OPTIND-1))  # This tells getopts to move on to the next argument.
 
-#Install git
+# Install git
 if [ -n "$(command -v apt-get)" ]; then
     # For apt-get-based Linux distributions (Ubuntu, Debian)
     # If we run script in container we need sudo
@@ -76,16 +76,16 @@ elif [ -n "$(command) -v zypper" ]; then
     fi
     sudo zypper --non-interactive install git
 else
-    echo "Neither apt-get nor yum nor zypper found"
+    echo "Neither apt-get, nor yum, nor zypper found"
     exit 1
 fi
 
 WORKDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-#Checkout tempest on specified tag
+# Checkout tempest on specified tag
 if [ -d "${WORKDIR}/.tempest" ]; then
     while true; do
-        read -p "Installed tempest found.We should remove it. All data from previouse test runs will be deleted. Continue (y/n) ?" yn
+        read -p "Existing tempest installation found. We should remove it. All data from previous test runs will be deleted. Continue (y/n) ?" yn
         case ${yn} in
             [Yy]* ) rm -rf ${WORKDIR}/.tempest; break;;
             [Nn]* ) exit 1;;
@@ -110,11 +110,11 @@ elif [ -n "$(command) -v zypper" ]; then
     # For zypper-based distributions (openSuSe, SELS)
     sudo zypper --non-interactive install curl wget tar unzip make python-devel.x86_64 gcc gcc-c++ libffi-devel libxml2-devel zlib-devel libxslt-devel libopenssl-devel python-xml
 else
-    echo "Neither apt-get nor yum nor zypper found"
+    echo "Neither apt-get, nor yum, nor zypper found."
     exit 1
 fi
 
-#Build local python interpreter if needed
+# Build local python interpreter if needed
 if [ ! -n "$(command -v python2.7)" ]; then
     PY_VERSION="2.7.8"
     echo "python2.7 not found. Building python ${PY_VERSION}..."
@@ -135,7 +135,7 @@ echo "python2.7 found!"
 PYPATH="python2.7"
 fi
 
-#Setup virtual environments for refstack-client and tempest
+# Setup virtual environments for refstack-client and tempest
 VENV_VERSION='1.11.6'
 wget https://pypi.python.org/packages/source/v/virtualenv/virtualenv-${VENV_VERSION}.tar.gz
 tar xvfz virtualenv-${VENV_VERSION}.tar.gz
@@ -151,5 +151,5 @@ rm virtualenv-${VENV_VERSION}.tar.gz
 ${WORKDIR}/.venv/bin/pip install -r ${WORKDIR}/requirements.txt
 ${WORKDIR}/.tempest/.venv/bin/pip install -r ${WORKDIR}/.tempest/requirements.txt
 
-# add additional packages to find more tests by tempest
+# Add additional packages to find more tests by tempest
 ${WORKDIR}/.tempest/.venv/bin/pip install -r ${WORKDIR}/tempest-additional-requirements.txt
