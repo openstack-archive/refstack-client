@@ -28,4 +28,4 @@ from refstack_client import refstack_client
 if __name__ == '__main__':
     args = refstack_client.parse_cli_args()
     test = refstack_client.RefstackClient(args)
-    getattr(test, args.func)()
+    raise SystemExit(getattr(test, args.func)())

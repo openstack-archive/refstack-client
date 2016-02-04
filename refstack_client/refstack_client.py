@@ -459,6 +459,7 @@ class RefstackClient:
         else:
             self.logger.error("Problem executing Tempest script. Exit code %d",
                               process.returncode)
+        return process.returncode
 
     def upload(self):
         '''Perform upload to RefStack URL.'''
