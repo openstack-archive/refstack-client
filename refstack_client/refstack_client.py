@@ -183,7 +183,15 @@ class RefstackClient:
                         'username': username, 'password': password,
                         'tenant_id': tenant_id, 'tenant_name': tenant_name
                         }
-            else:
+            elif conf_file.has_option('identity', 'username'):
+                self.logger.warn('Using identity section of tempest config '
+                                 'file to specify user credentials is '
+                                 'deprecated and won\'t be supported soon. '
+                                 'User credentials should be defined in the '
+                                 'accounts file as described in the Tempest '
+                                 'configuration guide (http://docs.openstack.'
+                                 'org/developer/tempest/configuration.html).')
+
                 username = conf_file.get('identity', 'username')
                 password = conf_file.get('identity', 'password')
 
@@ -197,6 +205,13 @@ class RefstackClient:
                         'domain_name': domain_name,
                         'username': username, 'password': password,
                         'tenant_id': tenant_id, 'tenant_name': tenant_name}
+            else:
+                self.logger.error('User credentials cannot be found. '
+                                  'User credentials should be defined in the '
+                                  'accounts file as described in the Tempest '
+                                  'configuration guide (http://docs.openstack.'
+                                  'org/developer/tempest/configuration.html).')
+                exit(1)
         except ConfigParser.Error as e:
             # Most likely a missing section or option in the config file.
             self.logger.error("Invalid Config File: %s" % e)

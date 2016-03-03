@@ -193,6 +193,20 @@ class TestRefstackClient(unittest.TestCase):
         with self.assertRaises(SystemExit):
             client._get_keystone_config(client.conf)
 
+    def test_get_keystone_config_no_accounts_file(self):
+        """
+        Test that the client will exit if accounts file
+        is not specified.
+        """
+        args = rc.parse_cli_args(self.mock_argv())
+        client = rc.RefstackClient(args)
+        client.tempest_dir = self.test_path
+        client._prep_test()
+
+        self.mock_data()
+        with self.assertRaises(SystemExit):
+            client._get_keystone_config(client.conf)
+
     def test_get_keystone_config(self):
         """
         Test that keystone configs properly parsed.
@@ -201,8 +215,22 @@ class TestRefstackClient(unittest.TestCase):
         client = rc.RefstackClient(args)
         client.tempest_dir = self.test_path
         client._prep_test()
-        client.conf.set('identity', 'tenant_name', 'tenant_name')
+        client.conf.add_section('auth')
+        client.conf.set('auth',
+                        'test_accounts_file',
+                        '%s/test-accounts.yaml' % self.test_path)
         self.mock_data()
+        accounts = [
+            {
+                'username': 'admin',
+                'tenant_name': 'tenant_name',
+                'tenant_id': 'admin_tenant_id',
+                'password': 'test'
+            }
+        ]
+        self.patch(
+            'refstack_client.refstack_client.read_accounts_yaml',
+            return_value=accounts)
         actual_result = client._get_keystone_config(client.conf)
         expected_result = self.v2_config
         self.assertEqual(expected_result, actual_result)
@@ -243,8 +271,21 @@ class TestRefstackClient(unittest.TestCase):
         client = rc.RefstackClient(args)
         client.tempest_dir = self.test_path
         client._prep_test()
-        client.conf.set('identity', 'tenant_name', 'tenant_name')
+        client.conf.add_section('auth')
+        client.conf.set('auth',
+                        'test_accounts_file',
+                        '%s/test-accounts.yaml' % self.test_path)
         self.mock_data()
+        accounts = [
+            {
+                'username': 'admin',
+                'tenant_id': 'admin_tenant_id',
+                'password': 'test'
+            }
+        ]
+        self.patch(
+            'refstack_client.refstack_client.read_accounts_yaml',
+            return_value=accounts)
         configs = client._get_keystone_config(client.conf)
         actual_results = client._generate_keystone_data(configs)
         expected_results = ('v2', 'http://0.0.0.0:35357/v2.0/tokens',
@@ -264,10 +305,20 @@ class TestRefstackClient(unittest.TestCase):
         client = rc.RefstackClient(args)
         client.tempest_dir = self.test_path
         client._prep_test()
-        client.conf.remove_option('identity', 'tenant_id')
-        client.conf.set('identity', 'tenant_name', 'tenant_name')
         client.conf.set('identity-feature-enabled', 'api_v3', 'true')
+        client.conf.add_section('auth')
+        client.conf.set('auth',
+                        'test_accounts_file',
+                        '%s/test-accounts.yaml' % self.test_path)
         self.mock_data()
+        accounts = [
+            {
+                'tenant_name': 'tenant_name'
+            }
+        ]
+        self.patch(
+            'refstack_client.refstack_client.read_accounts_yaml',
+            return_value=accounts)
         configs = client._get_keystone_config(client.conf)
         auth_version, auth_url, content = \
             client._generate_keystone_data(configs)
@@ -329,10 +380,23 @@ class TestRefstackClient(unittest.TestCase):
         client = rc.RefstackClient(args)
         client.tempest_dir = self.test_path
         client._prep_test()
-        client.conf.set('identity', 'tenant_name', 'tenant_name')
         client.logger.warning = MagicMock()
         client._generate_cpid_from_endpoint = MagicMock()
+        client.conf.add_section('auth')
+        client.conf.set('auth',
+                        'test_accounts_file',
+                        '%s/test-accounts.yaml' % self.test_path)
         self.mock_data()
+        accounts = [
+            {
+                'tenant_name': 'tenant_name',
+                'tenant_id': 'admin_tenant_id',
+                'password': 'test'
+            }
+        ]
+        self.patch(
+            'refstack_client.refstack_client.read_accounts_yaml',
+            return_value=accounts)
         configs = client._get_keystone_config(client.conf)
         auth_version, url, content = client._generate_keystone_data(configs)
 
