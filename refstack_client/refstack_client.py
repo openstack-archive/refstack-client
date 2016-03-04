@@ -237,7 +237,7 @@ class RefstackClient:
                     'identity': identity,
                     'scope': {
                         'project': {
-                            'name': auth_config['username'],
+                            'name': auth_config['tenant_name'],
                             'domain': {'name': auth_config['domain_name']}
                         }
                     }
