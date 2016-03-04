@@ -1,0 +1,11 @@
+Code-Review+2: Paul Van Eck <pvaneck@us.ibm.com>
+Code-Review+2: Catherine Diep <cdiep@us.ibm.com>
+Code-Review+1: David Liu <david.liu@cn.ibm.com>
+Code-Review+2: Sergey Slipushenko <sslypushenko@mirantis.com>
+Workflow+1: Sergey Slipushenko <sslypushenko@mirantis.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Fri, 04 Mar 2016 15:03:39 +0000
+Reviewed-on: https://review.openstack.org/287540
+Project: openstack/refstack-client
+Branch: refs/heads/master
