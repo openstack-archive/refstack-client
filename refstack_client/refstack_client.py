@@ -745,3 +745,9 @@ def parse_cli_args(args=None):
     parser_sign.set_defaults(func='self_sign')
 
     return parser.parse_args(args=args)
+
+
+def entry_point():
+    args = parse_cli_args()
+    test = RefstackClient(args)
+    raise SystemExit(getattr(test, args.func)())
