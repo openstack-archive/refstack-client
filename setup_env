@@ -1,6 +1,7 @@
 #!/bin/bash -x
 
-CHECKOUT_POINT=551e1a9701e7e2b3edf6d49a2eaa62b7ab2435ad
+#Default Tempest commit: SHA 09a60155435cfb8bfd1edb6eab3d4bec30515b8f Tag: 10.0.0
+CHECKOUT_POINT=09a60155435cfb8bfd1edb6eab3d4bec30515b8f
 
 # Prints help
 function usage {
@@ -26,7 +27,7 @@ function check_tag {
         return 1
 }
 
-# By default tempest uses from commit 551e1a9701e7e2b3edf6d49a2eaa62b7ab2435ad
+# By default tempest uses commit ${CHECKOUT_POINT}
 
 while getopts c:t:h FLAG; do
     case ${FLAG} in
