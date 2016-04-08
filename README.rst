@@ -12,7 +12,7 @@ We've created an "easy button" for Ubuntu, Centos, RHEL and openSuSe.
 1. Make sure you have *git* installed
 2. Get the refstack client: `git clone https://github.com/openstack/refstack-client`
 3. Go into the refstack-client directory: `cd refstack-client`
-4. Run the "easy button" setup: `./setup_env`
+4. To set up all dependencies run the script: `./setup_env`
 
    **Options:**
 
