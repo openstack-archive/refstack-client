@@ -59,9 +59,11 @@ We've created an "easy button" for Ubuntu, Centos, RHEL and openSuSe.
 
    For example:
 
-   `./refstack-client test -c ~/tempest.conf -v --test-list https://raw.githubusercontent.com/openstack/defcore/master/2015.05/2015.05.required.txt`
+   `./refstack-client test -c ~/tempest.conf -v \
+    --test-list "https://refstack.openstack.org/api/v1/guidelines/2016.01/tests?target=platform&type=required&alias=true&flag=false"`
 
-   This will run only the test cases listed in 2015.05.required.txt.
+   This will run only the test cases required by the 2016.01 guidelines
+   that have not been flagged.
 
    **Note:**
 
