@@ -1,7 +1,7 @@
 #!/bin/bash -x
 
-#Default Tempest commit: SHA 09a60155435cfb8bfd1edb6eab3d4bec30515b8f Tag: 10.0.0
-CHECKOUT_POINT=09a60155435cfb8bfd1edb6eab3d4bec30515b8f
+#Default Tempest commit: SHA 8d468c8332b1d0d7176c285de4cedfa589a54a23 (May 7, 2016)
+CHECKOUT_POINT=8d468c8332b1d0d7176c285de4cedfa589a54a23
 
 # Prints help
 function usage {
