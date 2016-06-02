@@ -9,10 +9,10 @@ it can send the passed test data to a RefStack API server.
 
 We've created an "easy button" for Ubuntu, Centos, RHEL and openSuSe.
 
-1. Make sure you have *git* installed
-2. Get the refstack client: `git clone https://github.com/openstack/refstack-client`
-3. Go into the refstack-client directory: `cd refstack-client`
-4. Run the "easy button" setup: `./setup_env`
+1. Make sure you have ``git`` installed
+2. Get the refstack client: ``git clone https://github.com/openstack/refstack-client``
+3. Go into the refstack-client directory: ``cd refstack-client``
+4. Run the "easy button" setup: ``./setup_env``
 
    **Options:**
 
@@ -20,7 +20,7 @@ We've created an "easy button" for Ubuntu, Centos, RHEL and openSuSe.
    which will be installed.
 
    b. -t option allows to specify tag in Tempest repository which will be installed.
-   For example: execute ./setup_env -t tags/3 to install Tempest tag-3.
+   For example: execute ``./setup_env -t tags/3`` to install Tempest tag-3.
 
    c. By default, Tempest will be installed from commit
    8d468c8332b1d0d7176c285de4cedfa589a54a23 (May 7, 2016).
@@ -30,107 +30,107 @@ We've created an "easy button" for Ubuntu, Centos, RHEL and openSuSe.
 1. Prepare a tempest configuration file that is customized to your cloud
    environment.
 
-2. Go into the refstack-client directory.
+2. Go into the refstack-client directory::
 
-   `cd ~/refstack-client`
+       cd ~/refstack-client
 
-3. Source to use the correct Python environment.
+3. Source to use the correct Python environment::
 
-   `source .venv/bin/activate`
+       source .venv/bin/activate
 
-4. Validate your setup by running a short test.
+4. Validate your setup by running a short test::
 
-   `./refstack-client test -c <Path of the tempest configuration file to use> -v -- tempest.api.identity.admin.v2.test_roles`
+       ./refstack-client test -c <Path of the tempest configuration file to use> -v -- tempest.api.identity.admin.v2.test_roles
 
-   or
+   or ::
 
-   `./refstack-client test -c <Path of the tempest configuration file to use> -v -- tempest.api.identity.v2.test_token`
+       ./refstack-client test -c <Path of the tempest configuration file to use> -v -- tempest.api.identity.v2.test_token
 
 
 5. Run tests.
 
-   To run the entire API test set:
+   To run the entire API test set::
 
-   `./refstack-client test -c <Path of the tempest configuration file to use> -v`
+       ./refstack-client test -c <Path of the tempest configuration file to use> -v
 
-   To run only those tests specified in a DefCore defined test file:
+   To run only those tests specified in a DefCore defined test file::
 
-   `./refstack-client test -c <Path of the tempest configuration file to use> -v --test-list <Path or URL of test list>`
+       ./refstack-client test -c <Path of the tempest configuration file to use> -v --test-list <Path or URL of test list>
 
-   For example:
+   For example::
 
-   `./refstack-client test -c ~/tempest.conf -v \
-    --test-list "https://refstack.openstack.org/api/v1/guidelines/2016.01/tests?target=platform&type=required&alias=true&flag=false"`
+       ./refstack-client test -c ~/tempest.conf -v --test-list \
+       "https://refstack.openstack.org/api/v1/guidelines/2016.01/tests?target=platform&type=required&alias=true&flag=false"
 
    This will run only the test cases required by the 2016.01 guidelines
    that have not been flagged.
 
    **Note:**
 
-   a. Adding the `-v` option will show the Tempest test result output.
-   b. Adding the `--upload` option will have your test results be uploaded to the
-      default RefStack API server or the server specified by `--url`.
-   c. Adding the `--test-list` option will allow you to specify the file path or URL of
+   a. Adding the ``-v`` option will show the Tempest test result output.
+   b. Adding the ``--upload`` option will have your test results be uploaded to the
+      default RefStack API server or the server specified by ``--url``.
+   c. Adding the ``--test-list`` option will allow you to specify the file path or URL of
       a test list text file. This test list should contain specific test cases that
       should be tested. Tests lists passed in using this argument will be normalized
       with the current Tempest evironment to eliminate any attribute mismatches.
-   d. Adding the `--url` option will allow you to change where test results should
+   d. Adding the ``--url`` option will allow you to change where test results should
       be uploaded.
-   e. Adding the `-r` option with a string will prefix the JSON result file with the
-      given string (e.g. '-r my-test' will yield a result file like
+   e. Adding the ``-r`` option with a string will prefix the JSON result file with the
+      given string (e.g. ``-r my-test`` will yield a result file like
       'my-test-0.json').
-   f. Adding `--` enables you to pass arbitary arguments to the Tempest runner.
-      After the first `--`, all other subsequent arguments will be passed to
+   f. Adding ``--`` enables you to pass arbitary arguments to the Tempest runner.
+      After the first ``--``, all other subsequent arguments will be passed to
       the Tempest runner as is. This is mainly used for quick verification of the
-      target test cases. (e.g. `-- tempest.api.identity.v2.test_token`)
+      target test cases. (e.g. ``-- tempest.api.identity.v2.test_token``)
 
-   Use `./refstack-client test --help` for the full list of arguments.
+   Use ``./refstack-client test --help`` for the full list of arguments.
 
 6. Upload your results.
 
-   If you previously ran a test with refstack-client without the `--upload`
+   If you previously ran a test with refstack-client without the ``--upload``
    option, you can upload your results to a RefStack API server by using the
-   following command:
+   following command::
 
-   `./refstack-client upload <Path of results file>`
+       ./refstack-client upload <Path of results file>
 
    The results file is a JSON file generated by refstack-client when a test has
    completed. This is saved in .tempest/.testrepository. When you use the
-   `upload` command, you can also override the RefStack API server uploaded to
-   with the `--url` option.
+   ``upload`` command, you can also override the RefStack API server uploaded to
+   with the ``--url`` option.
 
-   Alternatively, you can use the 'upload-subunit' command to upload results
+   Alternatively, you can use the ``upload-subunit`` command to upload results
    using an existing subunit file. This requires that you pass in the Keystone
-   endpoint URL for the cloud that was tested to generate the subunit data:
+   endpoint URL for the cloud that was tested to generate the subunit data::
 
-   `./refstack-client upload-subunit --keystone-endpoint http://some.url:5000/v3 <Path of subunit file>`
+       ./refstack-client upload-subunit --keystone-endpoint http://some.url:5000/v3 <Path of subunit file>
 
    **Note:**
 
-   a. Adding `-i <path-to-private-key>` option will upload test results with
+   a. Adding ``-i <path-to-private-key>`` option will upload test results with
       a digital signature. For signing, refstack-client uses private RSA keys.
       The OpenSSH format of RSA keys is supported, so you can just use your SSH
-      key '~/.ssh/id-rsa' or generate a new one with `ssh-keygen -b 4096`.
+      key '~/.ssh/id-rsa' or generate a new one with ``ssh-keygen -b 4096``.
       For now, signed test results can be considered private.
 
 7. List uploaded test set.
 
    You can list previously uploaded data from a RefStack API server by using
-   the following command:
+   the following command::
 
-   `./refstack-client list --url <URL of the RefStack API server>`
+       ./refstack-client list --url <URL of the RefStack API server>
 
 
 **Tempest Hacking**
 
-By default, refstack-client installs Tempest into the `.tempest` directory.
+By default, refstack-client installs Tempest into the ``.tempest`` directory.
 If you're interested in working with Tempest directly for debugging or
 configuration, you can activate a working Tempest environment by
 switching to that directory and using the installed dependencies.
 
-1. `cd .tempest`
-2. run tempest with `./run_tempest.sh -V ` or `source ./.venv/bin/activate`
-   and run tests manually with `testr`.
+1. ``cd .tempest``
+2. run tempest with ``./run_tempest.sh -V`` or ``source ./.venv/bin/activate``
+   and run tests manually with ``testr``.
 
 This will make the entire Tempest environment available for you to run,
-including the `run_tempest` script and `testr`.
+including the ``run_tempest`` script and ``testr``.
