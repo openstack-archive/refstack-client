@@ -569,8 +569,8 @@ class TestRefstackClient(unittest.TestCase):
         client.test()
 
         mock_popen.assert_called_with(
-            ['%s/run_tempest.sh' % self.test_path, '-C', self.conf_file_name,
-             '-V', '-t', '--', 'tempest.api.compute'],
+            ['%s/tools/with_venv.sh' % self.test_path, 'ostestr',
+             '--serial', '--no-slowest', '--regex', 'tempest.api.compute'],
             stderr=None
         )
 
@@ -600,8 +600,8 @@ class TestRefstackClient(unittest.TestCase):
         client._get_cpid_from_keystone = MagicMock()
         client.test()
         mock_popen.assert_called_with(
-            ['%s/run_tempest.sh' % self.test_path, '-C', self.conf_file_name,
-             '-V', '-t', '--', 'tempest.api.compute'],
+            ['%s/tools/with_venv.sh' % self.test_path, 'ostestr',
+             '--serial', '--no-slowest', '--regex', 'tempest.api.compute'],
             stderr=None
         )
 
@@ -633,8 +633,8 @@ class TestRefstackClient(unittest.TestCase):
             return_value='test-id')
         client.test()
         mock_popen.assert_called_with(
-            ['%s/run_tempest.sh' % self.test_path, '-C', self.conf_file_name,
-             '-V', '-t', '--', 'tempest.api.compute'],
+            ['%s/tools/with_venv.sh' % self.test_path, 'ostestr',
+             '--serial', '--no-slowest', '--regex', 'tempest.api.compute'],
             stderr=None
         )
 
@@ -664,15 +664,16 @@ class TestRefstackClient(unittest.TestCase):
         client.post_results = MagicMock()
         lp.TestListParser.get_normalized_test_list = MagicMock(
             return_value="/tmp/some-list")
+        lp.TestListParser.create_whitelist = MagicMock(
+            return_value="/tmp/some-list")
         client._get_keystone_config = MagicMock(
             return_value=self.v2_config)
         client.test()
 
-        lp.TestListParser.get_normalized_test_list.assert_called_with(
-            'test-list.txt')
+        lp.TestListParser.create_whitelist.assert_called_with('test-list.txt')
         mock_popen.assert_called_with(
-            ['%s/run_tempest.sh' % self.test_path, '-C', self.conf_file_name,
-             '-V', '-t', '--', '--load-list', '/tmp/some-list'],
+            ['%s/tools/with_venv.sh' % self.test_path, 'ostestr', '--serial',
+             '--no-slowest', '--whitelist_file', '/tmp/some-list'],
             stderr=None
         )
 
@@ -719,15 +720,14 @@ class TestRefstackClient(unittest.TestCase):
         client.test()
 
         mock_popen.assert_called_with(
-            ['%s/run_tempest.sh' % self.test_path, '-C', self.conf_file_name,
-             '-V', '-t', '--', 'tempest.api.compute'],
+            ['%s/tools/with_venv.sh' % self.test_path, 'ostestr',
+             '--serial', '--no-slowest', '--regex', 'tempest.api.compute'],
             stderr=None
         )
-
-        directory = os.path.dirname(os.path.realpath(__file__))
         # Since '1' is in the next-stream file, we expect the JSON output file
         # to be 'my-test-1.json'.
-        expected_file = directory + "/.testrepository/my-test-1.json"
+        expected_file = os.path.join(self.test_path, '.testrepository',
+                                     'my-test-1.json')
         client._save_json_results.assert_called_with(mock.ANY, expected_file)
 
     def test_failed_run(self):
@@ -740,12 +740,12 @@ class TestRefstackClient(unittest.TestCase):
         client = rc.RefstackClient(args)
         client.tempest_dir = self.test_path
         self.mock_data()
-        client.logger.error = MagicMock()
+        client.logger.warning = MagicMock()
         client._get_keystone_config = MagicMock(
             return_value=self.v2_config)
         client._get_cpid_from_keystone = MagicMock()
         client.test()
-        self.assertTrue(client.logger.error.called)
+        self.assertTrue(client.logger.warning.called)
 
     def test_upload(self):
         """

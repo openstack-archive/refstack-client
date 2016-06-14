@@ -205,3 +205,18 @@ class TestListParser(object):
                                                            base_test_ids)
         list_file = self._write_normalized_test_list(full_capability_test_ids)
         return list_file
+
+    def create_whitelist(self, list_location):
+        """This takes in a test list file, get normalized, and get whitelist
+        test IDs.
+        Ex:
+            'tempest.test1[id-2,gate]' -> id-2
+            'tempest.test2[id-3,smoke](scenario)' -> id-3
+
+        :param list_location: file path or URL location of list file
+        """
+        normalized_list = open(self.get_normalized_test_list(list_location),
+                               'r').read()
+        # Keep the IDs
+        test_ids = re.sub("[\,\]].*", "", re.sub(".*.\[", "", normalized_list))
+        return self._write_normalized_test_list(test_ids.split('\n'))
