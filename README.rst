@@ -23,7 +23,7 @@ We've created an "easy button" for Ubuntu, Centos, RHEL and openSuSe.
    For example: execute ``./setup_env -t tags/3`` to install Tempest tag-3.
 
    c. By default, Tempest will be installed from commit
-   8d468c8332b1d0d7176c285de4cedfa589a54a23 (May 7, 2016).
+   4d63b16de86cedeb9f4ee2d4daf7cb18c0fbc4a6 (June 17, 2016).
 
 **Usage**
 
