@@ -30,6 +30,10 @@ We've created an "easy button" for Ubuntu, Centos, RHEL and openSuSe.
 1. Prepare a tempest configuration file that is customized to your cloud
    environment.
 
+   Note: Use Tempest Pre-Provisioned credentials_ to provide user test accounts. ::
+
+.. _credentials: http://docs.openstack.org/developer/tempest/configuration.html#pre-provisioned-credentials
+
 2. Go into the refstack-client directory::
 
        cd ~/refstack-client
@@ -40,11 +44,11 @@ We've created an "easy button" for Ubuntu, Centos, RHEL and openSuSe.
 
 4. Validate your setup by running a short test::
 
-       ./refstack-client test -c <Path of the tempest configuration file to use> -v -- tempest.api.identity.admin.v2.test_roles
+       ./refstack-client test -c <Path of the tempest configuration file to use> -v -- --regex tempest.api.identity.admin.v2.test_roles
 
    or ::
 
-       ./refstack-client test -c <Path of the tempest configuration file to use> -v -- tempest.api.identity.v2.test_token
+       ./refstack-client test -c <Path of the tempest configuration file to use> -v -- --regex tempest.api.identity.v2.test_token
 
 
 5. Run tests.
@@ -79,10 +83,10 @@ We've created an "easy button" for Ubuntu, Centos, RHEL and openSuSe.
    e. Adding the ``-r`` option with a string will prefix the JSON result file with the
       given string (e.g. ``-r my-test`` will yield a result file like
       'my-test-0.json').
-   f. Adding ``--`` enables you to pass arbitary arguments to the Tempest runner.
+   f. Adding ``--`` enables you to pass arbitrary arguments to the ostestr runner.
       After the first ``--``, all other subsequent arguments will be passed to
-      the Tempest runner as is. This is mainly used for quick verification of the
-      target test cases. (e.g. ``-- tempest.api.identity.v2.test_token``)
+      the ostestr runner as is. This is mainly used for quick verification of the
+      target test cases. (e.g. ``-- --regex tempest.api.identity.v2.test_token``)
 
    Use ``./refstack-client test --help`` for the full list of arguments.
 
@@ -129,8 +133,8 @@ configuration, you can activate a working Tempest environment by
 switching to that directory and using the installed dependencies.
 
 1. ``cd .tempest``
-2. run tempest with ``./run_tempest.sh -V`` or ``source ./.venv/bin/activate``
-   and run tests manually with ``testr``.
+2. ``source ./.venv/bin/activate``
+   and run tests manually with ``ostestr``.
 
 This will make the entire Tempest environment available for you to run,
-including the ``run_tempest`` script and ``testr``.
+including the ``ostestr`` and ``testr`` commands.

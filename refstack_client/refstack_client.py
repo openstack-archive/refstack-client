@@ -73,7 +73,9 @@ class RefstackClient:
         self.logger.addHandler(self.console_log_handle)
 
         self.args = args
-        self.tempest_dir = '.tempest'
+        self.current_dir = os.path.dirname(os.path.realpath(__file__))
+        self.refstack_dir = os.path.dirname(self.current_dir)
+        self.tempest_dir = os.path.join(self.refstack_dir, '.tempest')
 
         # set default log level to INFO.
         if self.args.silent:
@@ -102,14 +104,9 @@ class RefstackClient:
                               "does not exist: %s" % self.tempest_dir)
             exit(1)
 
-        self.tempest_script = os.path.join(self.tempest_dir,
-                                           'run_tempest.sh')
-
         self.conf_file = self.args.conf_file
         self.conf = ConfigParser.SafeConfigParser()
         self.conf.read(self.args.conf_file)
-        self.tempest_script = os.path.join(self.tempest_dir,
-                                           'run_tempest.sh')
 
     def _prep_upload(self):
         '''Prepare an upload to the RefStack_api'''
@@ -406,28 +403,32 @@ class RefstackClient:
         self.logger.info("Starting Tempest test...")
         start_time = time.time()
 
-        # Run the tempest script, specifying the conf file, the flag
-        # telling it to use a virtual environment (-V), and the flag
-        # telling it to run the tests serially (-t).
-        cmd = [self.tempest_script, '-C', self.conf_file, '-V', '-t']
-
+        # Run the ostestr command, conf file specified at _prep_test method
+        # Use virtual environment (wrapper script)
+        # telling it to run the tests serially (--serial).
+        wrapper = os.path.join(self.tempest_dir, 'tools', 'with_venv.sh')
+        cmd = [wrapper, 'ostestr', '--serial', '--no-slowest']
         # If a test list was specified, have it take precedence.
         if self.args.test_list:
             self.logger.info("Normalizing test list...")
             parser = TestListParser(os.path.abspath(self.tempest_dir))
             parser.setup_venv(self.logger.getEffectiveLevel())
-            list_file = parser.get_normalized_test_list(self.args.test_list)
+            # get whitelist
+            list_file = parser.create_whitelist(self.args.test_list)
             if list_file:
-                cmd += ('--', '--load-list', list_file)
+                cmd += ('--whitelist_file', list_file)
             else:
                 self.logger.error("Error normalizing passed in test list.")
                 exit(1)
         elif 'arbitrary_args' in self.args:
-            # Add the tempest test cases to test as arguments. If no test
-            # cases are specified, then all Tempest API tests will be run.
-            cmd += self.args.arbitrary_args
+            # Additional arguments for ostestr runner
+            # otherwise run  all Tempest API tests.
+            # keep usage(-- testCaseName)
+            tmp = self.args.arbitrary_args[1:]
+            if tmp:
+                cmd += (tmp if tmp[0].startswith('-') else ['--regex'] + tmp)
         else:
-            cmd += ['--', "tempest.api"]
+            cmd += ['--regex', "tempest.api"]
 
         # If there were two verbose flags, show tempest results.
         if self.args.verbose > 0:
@@ -437,12 +438,14 @@ class RefstackClient:
             # results to stderr.
             stderr = open(os.devnull, 'w')
 
-        # Execute the tempest test script in a subprocess.
+        # Execute the ostestr command in a subprocess.
+        os.chdir(self.tempest_dir)
         process = subprocess.Popen(cmd, stderr=stderr)
         process.communicate()
+        os.chdir(self.refstack_dir)
 
-        # If the subunit file was created, then the Tempest test was at least
-        # started successfully.
+        # If the subunit file was created, then test cases were executed via
+        # ostestr and there is test output to process.
         if os.path.isfile(results_file):
             end_time = time.time()
             elapsed = end_time - start_time
@@ -472,8 +475,17 @@ class RefstackClient:
                 self.post_results(self.args.url, content,
                                   sign_with=self.args.priv_key)
         else:
-            self.logger.error("Problem executing Tempest script. Exit code %d",
-                              process.returncode)
+            msg1 = ("ostestr command did not generate a results file under "
+                    "the Refstack .tempest/.testrepository directory."
+                    "Review command and try again.")
+            msg2 = ("Problem executing ostestr command. Results file not "
+                    "generated hence no file to upload. "
+                    "Review arbitrary arguments.")
+            if process.returncode != 0:
+                self.logger.warning(msg1)
+            if self.args.upload:
+                self.logger.error(msg2)
+
         return process.returncode
 
     def upload(self):
@@ -704,12 +716,12 @@ def parse_cli_args(args=None):
     parser_test.add_argument('arbitrary_args',
                              nargs=argparse.REMAINDER,
                              help='After the first "--", you can pass '
-                                  'arbitrary arguments to the Tempest runner. '
+                                  'arbitrary arguments to the ostestr runner. '
                                   'This can be used for running specific test '
                                   'cases or test lists. Some examples are: '
-                                  '-- tempest.api.compute.images.test_list_'
-                                  'image_filters '
-                                  '-- --load-list /tmp/test-list.txt')
+                                  '-- --regex tempest.api.compute.images.'
+                                  'test_list_image_filters OR '
+                                  '-- --whitelist_file /tmp/testid-list.txt')
     parser_test.set_defaults(func="test")
 
     # List command
