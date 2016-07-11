@@ -1,0 +1,10 @@
+Code-Review+2: Catherine Diep <cdiep@us.ibm.com>
+Code-Review+2: Andrey Pavlov <andrey.mp@gmail.com>
+Code-Review+2: Paul Van Eck <pvaneck@us.ibm.com>
+Workflow+1: Paul Van Eck <pvaneck@us.ibm.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Mon, 11 Jul 2016 23:50:00 +0000
+Reviewed-on: https://review.openstack.org/329691
+Project: openstack/refstack-client
+Branch: refs/heads/master
