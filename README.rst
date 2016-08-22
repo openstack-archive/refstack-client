@@ -44,12 +44,7 @@ We've created an "easy button" for Ubuntu, Centos, RHEL and openSuSe.
 
 4. Validate your setup by running a short test::
 
-       ./refstack-client test -c <Path of the tempest configuration file to use> -v -- --regex tempest.api.identity.admin.v2.test_roles
-
-   or ::
-
-       ./refstack-client test -c <Path of the tempest configuration file to use> -v -- --regex tempest.api.identity.v2.test_token
-
+       ./refstack-client test -c <Path of the tempest configuration file to use> -v -- --regex tempest.api.identity.v3.test_tokens.TokensV3Test.test_create_token
 
 5. Run tests.
 
@@ -93,8 +88,12 @@ We've created an "easy button" for Ubuntu, Centos, RHEL and openSuSe.
 6. Upload your results.
 
    If you previously ran a test with refstack-client without the ``--upload``
-   option, you can upload your results to a RefStack API server by using the
-   following command::
+   option, you can later upload your results to a RefStack API server
+   anonymously or with your digital signature. By default, results uploaded
+   with signature are private and you can decide to share or delete the results
+   later. Uploading results with signature is the recommended option.
+
+   Following is the command to upload your result anonymously::
 
        ./refstack-client upload <Path of results file>
 
@@ -109,13 +108,10 @@ We've created an "easy button" for Ubuntu, Centos, RHEL and openSuSe.
 
        ./refstack-client upload-subunit --keystone-endpoint http://some.url:5000/v3 <Path of subunit file>
 
-   **Note:**
-
-   a. Adding ``-i <path-to-private-key>`` option will upload test results with
-      a digital signature. For signing, refstack-client uses private RSA keys.
-      The OpenSSH format of RSA keys is supported, so you can just use your SSH
-      key '~/.ssh/id-rsa' or generate a new one with ``ssh-keygen -b 4096``.
-      For now, signed test results can be considered private.
+   Result can also be uploaded with signature by adding
+   ``-i <path-to-private-key>`` option.  Intructions for uploading data with
+   signature can be found at
+   https://github.com/openstack/refstack/blob/master/doc/source/uploading_private_results.rst
 
 7. List uploaded test set.
 
