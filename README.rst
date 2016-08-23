@@ -77,7 +77,7 @@ We've created an "easy button" for Ubuntu, Centos, RHEL and openSuSe.
    c. Adding the ``--test-list`` option will allow you to specify the file path or URL of
       a test list text file. This test list should contain specific test cases that
       should be tested. Tests lists passed in using this argument will be normalized
-      with the current Tempest evironment to eliminate any attribute mismatches.
+      with the current Tempest environment to eliminate any attribute mismatches.
    d. Adding the ``--url`` option will allow you to change where test results should
       be uploaded.
    e. Adding the ``-r`` option with a string will prefix the JSON result file with the
