@@ -103,13 +103,13 @@ cd ${WORKDIR}
 # Setup binary requirements
 if [ -n "$(command -v apt-get)" ]; then
     # For apt-get-based Linux distributions (Ubuntu, Debian)
-    sudo apt-get -y install curl wget tar unzip python-dev build-essential libssl-dev libxslt-dev libsasl2-dev libffi-dev libbz2-dev
+    sudo apt-get -y install curl wget tar unzip python-dev build-essential libssl-dev libxslt-dev libsasl2-dev libffi-dev libbz2-dev libyaml-dev
 elif [ -n "$(command -v yum)" ]; then
     # For yum-based distributions (RHEL, Centos)
-    sudo yum -y install curl wget tar unzip make python-devel.x86_64 gcc gcc-c++ libffi-devel libxml2-devel bzip2-devel libxslt-devel openssl-devel
+    sudo yum -y install curl wget tar unzip make python-devel.x86_64 gcc gcc-c++ libffi-devel libxml2-devel bzip2-devel libxslt-devel openssl-devel libyaml-devel
 elif [ -n "$(command) -v zypper" ]; then
     # For zypper-based distributions (openSuSe, SELS)
-    sudo zypper --non-interactive install curl wget tar unzip make python-devel.x86_64 gcc gcc-c++ libffi-devel libxml2-devel zlib-devel libxslt-devel libopenssl-devel python-xml
+    sudo zypper --non-interactive install curl wget tar unzip make python-devel.x86_64 gcc gcc-c++ libffi-devel libxml2-devel zlib-devel libxslt-devel libopenssl-devel python-xml libyaml-devel
 else
     echo "Neither apt-get, nor yum, nor zypper found."
     exit 1
