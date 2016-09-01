@@ -137,9 +137,9 @@ PYPATH="python2.7"
 fi
 
 # Setup virtual environments for refstack-client and tempest
-VENV_VERSION='1.11.6'
-wget https://pypi.python.org/packages/source/v/virtualenv/virtualenv-${VENV_VERSION}.tar.gz
-tar xvfz virtualenv-${VENV_VERSION}.tar.gz
+VENV_VERSION='15.0.3'
+wget https://github.com/pypa/virtualenv/archive/${VENV_VERSION}.tar.gz
+tar xvfz ${VENV_VERSION}.tar.gz
 cd virtualenv-${VENV_VERSION}
 if [ -d ${WORKDIR}/.venv ]; then
     rm -rf ${WORKDIR}/.venv
