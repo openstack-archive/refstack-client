@@ -140,6 +140,7 @@ fi
 VENV_VERSION='15.0.3'
 wget https://github.com/pypa/virtualenv/archive/${VENV_VERSION}.tar.gz
 tar xvfz ${VENV_VERSION}.tar.gz
+rm ${VENV_VERSION}.tar.gz
 cd virtualenv-${VENV_VERSION}
 if [ -d ${WORKDIR}/.venv ]; then
     rm -rf ${WORKDIR}/.venv
