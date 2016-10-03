@@ -1,0 +1,9 @@
+Code-Review+2: Andrey Pavlov <andrey.mp@gmail.com>
+Code-Review+2: Catherine Diep <cdiep@us.ibm.com>
+Workflow+1: Catherine Diep <cdiep@us.ibm.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Mon, 03 Oct 2016 17:35:15 +0000
+Reviewed-on: https://review.openstack.org/379591
+Project: openstack/refstack-client
+Branch: refs/heads/master
