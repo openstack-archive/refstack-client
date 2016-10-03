@@ -17,6 +17,7 @@ import logging
 import os
 import requests
 import subprocess
+import tempfile
 
 import httmock
 import mock
@@ -184,3 +185,24 @@ class TestTestListParser(unittest.TestCase):
         subprocess.Popen = mock.Mock(return_value=process_mock)
         with self.assertRaises(subprocess.CalledProcessError):
             self.parser.setup_venv(logging.DEBUG)
+
+    @mock.patch.object(parser.TestListParser, "get_normalized_test_list")
+    def test_create_whitelist(self, mock_get_normalized):
+        """Test whether a test list is properly parsed to extract test names"""
+        test_list = [
+            "tempest.test.one[id-11111111-2222-3333-4444-555555555555,gate]",
+            "tempest.test.two[comp,id-22222222-3333-4444-5555-666666666666]",
+            "tempest.test.three[id-33333333-4444-5555-6666-777777777777](gate)"
+        ]
+
+        expected_list = "tempest.test.one\[\n"\
+                        "tempest.test.two\[\n"\
+                        "tempest.test.three\[\n"
+
+        tmpfile = tempfile.mktemp()
+        with open(tmpfile, 'w') as f:
+            [f.write(item + "\n") for item in test_list]
+        mock_get_normalized.return_value = tmpfile
+
+        result = open(self.parser.create_whitelist(tmpfile)).read()
+        self.assertEqual(result, expected_list)

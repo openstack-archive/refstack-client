@@ -208,15 +208,18 @@ class TestListParser(object):
 
     def create_whitelist(self, list_location):
         """This takes in a test list file, get normalized, and get whitelist
-        test IDs.
+        regexes using full qualified test names (one per line).
         Ex:
-            'tempest.test1[id-2,gate]' -> id-2
-            'tempest.test2[id-3,smoke](scenario)' -> id-3
+            'tempest.test1[id-2,gate]' -> tempest.test1\[
+            'tempest.test2[id-3,smoke](scenario)' -> tempest.test2\[
+            'tempest.test3[compute,id-4]' -> tempest.test3\[
 
         :param list_location: file path or URL location of list file
         """
         normalized_list = open(self.get_normalized_test_list(list_location),
                                'r').read()
-        # Keep the IDs
-        test_ids = re.sub("[\,\]].*", "", re.sub(".*.\[", "", normalized_list))
-        return self._write_normalized_test_list(test_ids.split('\n'))
+        # Keep the names
+        tests_list = [re.sub("\[", "\[", test)
+                      for test in re.findall(".*\[", normalized_list)]
+
+        return self._write_normalized_test_list(tests_list)
