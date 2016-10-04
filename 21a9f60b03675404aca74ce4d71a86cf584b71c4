@@ -1,0 +1,11 @@
+Code-Review+1: Chris Hoge <chris@openstack.org>
+Code-Review+1: Sergey Slipushenko <sslypushenko@mirantis.com>
+Code-Review+1: Luz Cazares <luz.cazares@intel.com>
+Code-Review+2: Catherine Diep <cdiep@us.ibm.com>
+Workflow+1: Sergey Slipushenko <sslypushenko@mirantis.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Tue, 04 Oct 2016 19:51:22 +0000
+Reviewed-on: https://review.openstack.org/361189
+Project: openstack/refstack-client
+Branch: refs/heads/master
