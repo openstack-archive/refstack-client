@@ -411,7 +411,8 @@ class RefstackClient:
         # If a test list was specified, have it take precedence.
         if self.args.test_list:
             self.logger.info("Normalizing test list...")
-            parser = TestListParser(os.path.abspath(self.tempest_dir))
+            parser = TestListParser(os.path.abspath(self.tempest_dir),
+                                    insecure=self.args.insecure)
             parser.setup_venv(self.logger.getEffectiveLevel())
             # get whitelist
             list_file = parser.create_whitelist(self.args.test_list)
@@ -522,7 +523,8 @@ class RefstackClient:
                 if locals()[param]:
                     params.update({param: locals()[param]})
             try:
-                resp = requests.get(endpoint, headers=headers, params=params)
+                resp = requests.get(endpoint, headers=headers, params=params,
+                                    verify=not self.args.insecure)
                 resp.raise_for_status()
             except requests.exceptions.HTTPError as e:
                 self.logger.info('Failed to list %s - %s ' % (endpoint, e))

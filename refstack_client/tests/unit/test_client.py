@@ -26,7 +26,6 @@ from mock import MagicMock
 import unittest
 
 import refstack_client.refstack_client as rc
-import refstack_client.list_parser as lp
 
 
 class TestRefstackClient(unittest.TestCase):
@@ -647,7 +646,10 @@ class TestRefstackClient(unittest.TestCase):
             sign_with='rsa_key'
         )
 
-    def test_run_tempest_with_test_list(self):
+    @mock.patch('refstack_client.list_parser.TestListParser.create_whitelist')
+    @mock.patch('refstack_client.list_parser.'
+                'TestListParser.get_normalized_test_list')
+    def test_run_tempest_with_test_list(self, mock_normalize, mock_whitelist):
         """Test that the Tempest script runs with a test list file."""
         argv = self.mock_argv(verbose='-vv')
         argv.extend(['--test-list', 'test-list.txt'])
@@ -662,15 +664,13 @@ class TestRefstackClient(unittest.TestCase):
         client.get_passed_tests = MagicMock(return_value=[{'name': 'test'}])
         client._save_json_results = MagicMock()
         client.post_results = MagicMock()
-        lp.TestListParser.get_normalized_test_list = MagicMock(
-            return_value="/tmp/some-list")
-        lp.TestListParser.create_whitelist = MagicMock(
-            return_value="/tmp/some-list")
+        mock_normalize.return_value = '/tmp/some-list'
+        mock_whitelist.return_value = '/tmp/some-list'
         client._get_keystone_config = MagicMock(
             return_value=self.v2_config)
         client.test()
 
-        lp.TestListParser.create_whitelist.assert_called_with('test-list.txt')
+        mock_whitelist.assert_called_with('test-list.txt')
         mock_popen.assert_called_with(
             ['%s/tools/with_venv.sh' % self.test_path, 'ostestr', '--serial',
              '--no-slowest', '--whitelist_file', '/tmp/some-list'],

@@ -29,14 +29,16 @@ class TestListParser(object):
     current Tempest environment.
     """
 
-    def __init__(self, tempest_dir):
+    def __init__(self, tempest_dir, insecure=False):
         """
         Initialize the TestListParser.
 
         :param tempest_dir: Absolute path of the Tempest directory.
+        :param insecure: Whether https requests, if any, should be insecure.
         """
         self.logger = logging.getLogger(__name__)
         self.tempest_dir = tempest_dir
+        self.insecure = insecure
 
     def _get_tempest_test_ids(self):
         """This does a 'testr list-tests' on the Tempest directory in order to
@@ -92,7 +94,8 @@ class TestListParser(object):
         :param list_location: file path or URL location of list file
         """
         try:
-            response = requests.get(list_location)
+            response = requests.get(list_location,
+                                    verify=not self.insecure)
             testcase_list = response.text.split('\n')
             test_mappings = self._form_test_id_mappings(testcase_list)
         # If the location isn't a valid URL, we assume it is a file path.
