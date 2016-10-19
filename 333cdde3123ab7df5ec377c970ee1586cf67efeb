@@ -1,0 +1,10 @@
+Code-Review+1: Imran Hayder Malik <imran.malik@emc.com>
+Code-Review+2: Andrey Pavlov <andrey.mp@gmail.com>
+Code-Review+2: Catherine Diep <cdiep@us.ibm.com>
+Workflow+1: Catherine Diep <cdiep@us.ibm.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Wed, 19 Oct 2016 18:29:11 +0000
+Reviewed-on: https://review.openstack.org/388250
+Project: openstack/refstack-client
+Branch: refs/heads/master
