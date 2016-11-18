@@ -150,8 +150,8 @@ python virtualenv.py ${WORKDIR}/.tempest/.venv --python="${PYPATH}"
 cd ..
 rm -rf virtualenv-${VENV_VERSION}
 rm virtualenv-${VENV_VERSION}.tar.gz
-${WORKDIR}/.venv/bin/pip install -r ${WORKDIR}/requirements.txt
-${WORKDIR}/.tempest/.venv/bin/pip install -r ${WORKDIR}/.tempest/requirements.txt
+${WORKDIR}/.venv/bin/python -m pip install -r ${WORKDIR}/requirements.txt
+${WORKDIR}/.tempest/.venv/bin/python -m pip install -r ${WORKDIR}/.tempest/requirements.txt
 
 # Add additional packages to find more tests by tempest
 # Note: Since there are no requirements in tempest-additional-requirements.txt by default,
