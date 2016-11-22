@@ -1,0 +1,10 @@
+Code-Review+1: Henry Gessau <HenryG@gessau.net>
+Code-Review+2: Catherine Diep <cdiep@us.ibm.com>
+Code-Review+2: Andrey Pavlov <andrey.mp@gmail.com>
+Workflow+1: Andrey Pavlov <andrey.mp@gmail.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Tue, 22 Nov 2016 05:36:31 +0000
+Reviewed-on: https://review.openstack.org/399754
+Project: openstack/refstack-client
+Branch: refs/heads/master
