@@ -1,11 +1,24 @@
-refstack-client
-===============
+========================
+RefStack Client
+========================
+
+RefStack-client team and repository tags
+########################################
+
+
+.. image:: http://governance.openstack.org/badges/refstack-client.svg
+    :target: http://governance.openstack.org/reference/tags/index.html
+
+
+Overview
+########
 
 refstack-client is a command line utility that allows you to execute Tempest
 test runs based on configurations you specify.  When finished running Tempest
 it can send the passed test data to a RefStack API server.
 
-**Environment setup**
+Environment setup
+#################
 
 We've created an "easy button" for Ubuntu, Centos, RHEL and openSuSe.
 
@@ -25,7 +38,8 @@ We've created an "easy button" for Ubuntu, Centos, RHEL and openSuSe.
    c. By default, Tempest will be installed from commit
    4d63b16de86cedeb9f4ee2d4daf7cb18c0fbc4a6 (June 17, 2016).
 
-**Usage**
+Usage
+#####
 
 1. Prepare a tempest configuration file that is customized to your cloud
    environment.
@@ -121,7 +135,8 @@ We've created an "easy button" for Ubuntu, Centos, RHEL and openSuSe.
        ./refstack-client list --url <URL of the RefStack API server>
 
 
-**Tempest Hacking**
+Tempest hacking
+###############
 
 By default, refstack-client installs Tempest into the ``.tempest`` directory.
 If you're interested in working with Tempest directly for debugging or
