@@ -66,7 +66,7 @@ Usage
 
        ./refstack-client test -c <Path of the tempest configuration file to use> -v
 
-   To run only those tests specified in a DefCore defined test file::
+   To run only those tests specified in an OpenStack Powered (TM) Guideline::
 
        ./refstack-client test -c <Path of the tempest configuration file to use> -v --test-list <Path or URL of test list>
 
