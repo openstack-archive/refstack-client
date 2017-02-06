@@ -73,9 +73,9 @@ Usage
    For example::
 
        ./refstack-client test -c ~/tempest.conf -v --test-list \
-       "https://refstack.openstack.org/api/v1/guidelines/2016.01/tests?target=platform&type=required&alias=true&flag=false"
+       "https://refstack.openstack.org/api/v1/guidelines/2017.01/tests?target=platform&type=required&alias=true&flag=false"
 
-   This will run only the test cases required by the 2016.01 guidelines
+   This will run only the test cases required by the 2017.01 guidelines
    that have not been flagged.
 
    **Note:**
