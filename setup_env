@@ -12,8 +12,9 @@ function usage {
     echo ""
     echo "  -h  Print this usage message"
     echo "  -c  Tempest test runner commit. You can specify SHA or branch here"
-    echo "  -t  Tempest test runner tag. You can specify tag here"
     echo "      If no commit or tag is specified, tempest will be install from commit"
+    echo "  -q  Run quietly. If .tempest folder exists, refstack-client is considered as installed"
+    echo "  -t  Tempest test runner tag. You can specify tag here"
     echo "      ${CHECKOUT_POINT}"
     exit 1
 }
@@ -29,13 +30,16 @@ function check_tag {
 
 # By default tempest uses commit ${CHECKOUT_POINT}
 
-while getopts c:t:h FLAG; do
+while getopts c:t:qh FLAG; do
     case ${FLAG} in
         c)
             CHECKOUT_POINT=${OPTARG}
             ;;
         t)
             CHECKOUT_POINT="-q ${OPTARG}"
+            ;;
+        q)  #show help
+            QUIET_MODE=true
             ;;
         h)  #show help
             usage
@@ -46,9 +50,25 @@ while getopts c:t:h FLAG; do
             ;;
     esac
 done
-shift $((OPTIND-1))  # This tells getopts to move on to the next argument.
 
 # Install git
+WORKDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+TEMPEST_DIR=${REFSTACK_CLIENT_TEMPEST_DIR:-${WORKDIR}/.tempest}
+
+# Checkout tempest on specified tag
+if [ -d "${TEMPEST_DIR}" ]; then
+    [ ${QUIET_MODE} ] && echo 'Looks like RefStack client is already installed' && exit 0
+    while true; do
+        read -p "Existing tempest installation found. We should remove it. All data from previous test runs will be deleted. Continue (y/n) ?" yn
+        case ${yn} in
+            [Yy]* ) rm -rf ${TEMPEST_DIR}; break;;
+            [Nn]* ) exit 1;;
+            * ) echo "Please answer yes or no.";;
+        esac
+    done
+fi
+
 if [ -n "$(command -v apt-get)" ]; then
     # For apt-get-based Linux distributions (Ubuntu, Debian)
     # If we run script in container we need sudo
@@ -81,21 +101,8 @@ else
     exit 1
 fi
 
-WORKDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-
-# Checkout tempest on specified tag
-if [ -d "${WORKDIR}/.tempest" ]; then
-    while true; do
-        read -p "Existing tempest installation found. We should remove it. All data from previous test runs will be deleted. Continue (y/n) ?" yn
-        case ${yn} in
-            [Yy]* ) rm -rf ${WORKDIR}/.tempest; break;;
-            [Nn]* ) exit 1;;
-            * ) echo "Please answer yes or no.";;
-        esac
-    done
-fi
-git clone https://github.com/openstack/tempest.git ${WORKDIR}/.tempest
-cd ${WORKDIR}/.tempest
+git clone https://github.com/openstack/tempest.git ${TEMPEST_DIR}
+cd ${TEMPEST_DIR}
 
 git checkout $CHECKOUT_POINT || if [ $? -ne 0 ]; then exit 1; fi
 cd ${WORKDIR}
@@ -146,15 +153,15 @@ if [ -d ${WORKDIR}/.venv ]; then
     rm -rf ${WORKDIR}/.venv
 fi
 python virtualenv.py ${WORKDIR}/.venv --python="${PYPATH}"
-python virtualenv.py ${WORKDIR}/.tempest/.venv --python="${PYPATH}"
+python virtualenv.py ${TEMPEST_DIR}/.venv --python="${PYPATH}"
 cd ..
 rm -rf virtualenv-${VENV_VERSION}
 rm virtualenv-${VENV_VERSION}.tar.gz
 ${WORKDIR}/.venv/bin/python -m pip install -r ${WORKDIR}/requirements.txt
-${WORKDIR}/.tempest/.venv/bin/python -m pip install -r ${WORKDIR}/.tempest/requirements.txt
+${TEMPEST_DIR}/.venv/bin/python -m pip install -r ${TEMPEST_DIR}/requirements.txt
 
 # Add additional packages to find more tests by tempest
 # Note: Since there are no requirements in tempest-additional-requirements.txt by default,
 # this line is commented out to prevent errors from being returned. Uncomment this line if
 # there are requirements in tempest-additonal-requirements.txt.
-#${WORKDIR}/.tempest/.venv/bin/pip install -r ${WORKDIR}/tempest-additional-requirements.txt
+# ${TEMPEST_DIR}/.venv/bin/pip install -r ${WORKDIR}/tempest-additional-requirements.txt
