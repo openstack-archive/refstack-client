@@ -1,7 +1,7 @@
 #!/bin/bash -x
 
-#Default Tempest commit: SHA fba6f756afd15cb09742b7a9f237a4e061dcda70 (Decmeber 21, 2016 tags 14.0.0)
-CHECKOUT_POINT=fba6f756afd15cb09742b7a9f237a4e061dcda70
+#Default Tempest commit: SHA 8f98c4b60bf06a8c15e8c054848d2440c46077d0 (February 17, 2017 tags 15.0.0)
+CHECKOUT_POINT=8f98c4b60bf06a8c15e8c054848d2440c46077d0
 
 # Prints help
 function usage {
