@@ -1,0 +1,9 @@
+Code-Review+2: Catherine Diep <cdiep@us.ibm.com>
+Code-Review+2: Sergey Slipushenko <slipushenko@gmail.com>
+Workflow+1: Sergey Slipushenko <slipushenko@gmail.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Mon, 27 Mar 2017 09:25:26 +0000
+Reviewed-on: https://review.openstack.org/449445
+Project: openstack/refstack-client
+Branch: refs/heads/master
