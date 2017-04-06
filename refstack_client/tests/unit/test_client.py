@@ -660,6 +660,7 @@ class TestRefstackClient(unittest.TestCase):
             'refstack_client.refstack_client.subprocess.Popen',
             return_value=MagicMock(returncode=0))
         self.patch("os.path.isfile", return_value=True)
+        self.patch("os.path.getsize", return_value=4096)
         self.mock_data()
         client.get_passed_tests = MagicMock(return_value=[{'name': 'test'}])
         client._save_json_results = MagicMock()
@@ -884,3 +885,38 @@ class TestRefstackClient(unittest.TestCase):
         conf_file = os.path.basename(self.conf_file_name)
         self.assertEqual(os.environ.get('TEMPEST_CONFIG_DIR'), conf_dir)
         self.assertEqual(os.environ.get('TEMPEST_CONFIG'), conf_file)
+
+    @mock.patch('refstack_client.list_parser.TestListParser.create_whitelist')
+    def test_run_tempest_with_empty_test_list(self, mock_whitelist):
+        """Test that refstack-client can handle an empty test list file."""
+        argv = self.mock_argv(verbose='-vv')
+        argv.extend(['--test-list', 'foo.txt'])
+        args = rc.parse_cli_args(argv)
+        client = rc.RefstackClient(args)
+        self.mock_data()
+        self.patch(
+            'refstack_client.refstack_client.subprocess.Popen',
+            return_value=MagicMock(returncode=0))
+        client._get_keystone_config = MagicMock(return_value=self.v2_config)
+        client.tempest_dir = self.test_path
+        self.patch("os.path.isfile", return_value=True)
+        empty_file = tempfile.NamedTemporaryFile()
+        mock_whitelist.return_value = empty_file.name
+        self.assertRaises(SystemExit, client.test)
+
+    def test_run_tempest_with_non_exist_test_list_file(self):
+        """Test that refstack-client runs with a nonexistent test list file."""
+        argv = self.mock_argv(verbose='-vv')
+        argv.extend(['--test-list', 'foo.txt'])
+        args = rc.parse_cli_args(argv)
+        client = rc.RefstackClient(args)
+        self.mock_data()
+        self.patch(
+            'refstack_client.list_parser.TestListParser._get_tempest_test_ids',
+            return_value={'foo': ''})
+        self.patch(
+            'refstack_client.refstack_client.subprocess.Popen',
+            return_value=MagicMock(returncode=0))
+        client._get_keystone_config = MagicMock(return_value=self.v2_config)
+        client.tempest_dir = self.test_path
+        self.assertRaises(IOError, client.test)

@@ -418,7 +418,13 @@ class RefstackClient:
             # get whitelist
             list_file = parser.create_whitelist(self.args.test_list)
             if list_file:
-                cmd += ('--whitelist_file', list_file)
+                if os.path.getsize(list_file) > 0:
+                    cmd += ('--whitelist_file', list_file)
+                else:
+                    self.logger.error("Test list is either empty or no valid "
+                                      "test cases for the tempest "
+                                      "environment were found.")
+                    exit(1)
             else:
                 self.logger.error("Error normalizing passed in test list.")
                 exit(1)
