@@ -6,8 +6,8 @@ RefStack-client team and repository tags
 ########################################
 
 
-.. image:: http://governance.openstack.org/badges/refstack-client.svg
-    :target: http://governance.openstack.org/reference/tags/index.html
+.. image:: https://governance.openstack.org/badges/refstack-client.svg
+    :target: https://governance.openstack.org/reference/tags/index.html
 
 
 Overview
