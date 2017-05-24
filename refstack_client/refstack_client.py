@@ -93,6 +93,11 @@ class RefstackClient:
             self.logger.error("Conf file not valid: %s" % self.args.conf_file)
             exit(1)
 
+        if not os.access(self.args.conf_file, os.R_OK):
+            self.logger.error("You do not have read access to: %s"
+                              % self.args.conf_file)
+            exit(1)
+
         # Initialize environment variables with config file info
         os.environ["TEMPEST_CONFIG_DIR"] = os.path.abspath(
             os.path.dirname(self.args.conf_file))

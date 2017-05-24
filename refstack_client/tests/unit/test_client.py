@@ -686,6 +686,18 @@ class TestRefstackClient(unittest.TestCase):
         client = rc.RefstackClient(args)
         self.assertRaises(SystemExit, client.test)
 
+    def test_forbidden_conf_file(self):
+        """
+        Test when the user passes in a file that the user does not have
+        read access to.
+        """
+        file = tempfile.NamedTemporaryFile()
+        # Remove read access
+        os.chmod(file.name, 0o220)
+        args = rc.parse_cli_args(self.mock_argv(conf_file_name=file.name))
+        client = rc.RefstackClient(args)
+        self.assertRaises(SystemExit, client.test)
+
     def test_run_tempest_nonexisting_directory(self):
         """
         Test when the Tempest directory does not exist.
