@@ -1,0 +1,17 @@
+*.egg*
+*.py[cod]
+.coverage
+.cache
+.tox/
+.venv/
+AUTHORS
+ChangeLog
+build/
+cover/
+dist
+.git/
+venv/
+.venv/
+.tempest/
+htmlcov/
+test-reports/
