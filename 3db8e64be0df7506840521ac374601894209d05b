@@ -1,0 +1,9 @@
+Code-Review+2: Luz Cazares <luz.cazares@intel.com>
+Code-Review+2: Paul Van Eck <pvaneck@us.ibm.com>
+Workflow+1: Paul Van Eck <pvaneck@us.ibm.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Tue, 20 Jun 2017 18:14:51 +0000
+Reviewed-on: https://review.openstack.org/459652
+Project: openstack/refstack-client
+Branch: refs/heads/master
