@@ -35,9 +35,12 @@ import os
 import subprocess
 import time
 
-from Crypto.Hash import SHA256
-from Crypto.PublicKey import RSA
-from Crypto.Signature import PKCS1_v1_5
+from cryptography.exceptions import UnsupportedAlgorithm
+from cryptography.hazmat import backends
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import padding
+
 import requests
 import requests.exceptions
 import six.moves
@@ -361,26 +364,32 @@ class RefstackClient:
         return results
 
     def post_results(self, url, content, sign_with=None):
-        '''Post the combined results back to the server.'''
+        '''Post the combined results back to the refstack server.'''
         endpoint = '%s/v1/results/' % url
         headers = {'Content-type': 'application/json'}
         data = json.dumps(content)
         self.logger.debug('API request content: %s ' % content)
         if sign_with:
-            data_hash = SHA256.new()
-            data_hash.update(data.encode('utf-8'))
-            with open(sign_with) as key_pair_file:
+            with open(sign_with) as private_key_file:
                 try:
-                    key = RSA.importKey(key_pair_file.read())
-                except (IOError, ValueError) as e:
-                    self.logger.info('Error during upload key pair %s'
-                                     '' % key_pair_file)
+                    private_key = serialization.load_pem_private_key(
+                        private_key_file.read().encode('utf-8'),
+                        password=None,
+                        backend=backends.default_backend())
+                except (IOError, UnsupportedAlgorithm, ValueError) as e:
+                    self.logger.info('Error during upload key pair %s' %
+                                     private_key_file)
                     self.logger.exception(e)
                     return
-            signer = PKCS1_v1_5.new(key)
-            sign = signer.sign(data_hash)
-            headers['X-Signature'] = binascii.b2a_hex(sign)
-            headers['X-Public-Key'] = key.publickey().exportKey('OpenSSH')
+            signer = private_key.signer(padding.PKCS1v15(), hashes.SHA256())
+            signer.update(data.encode('utf-8'))
+            signature = binascii.b2a_hex(signer.finalize())
+            pubkey = private_key.public_key().public_bytes(
+                serialization.Encoding.OpenSSH,
+                serialization.PublicFormat.OpenSSH)
+
+            headers['X-Signature'] = signature
+            headers['X-Public-Key'] = pubkey
         try:
             response = requests.post(endpoint,
                                      data=data,
@@ -563,27 +572,34 @@ class RefstackClient:
 
     def _sign_pubkey(self):
         """Generate self signature for public key"""
+        private_key_file = self.args.priv_key_to_sign
         try:
-            with open(self.args.priv_key_to_sign) as priv_key_file:
-                private_key = RSA.importKey(priv_key_file.read())
-        except (IOError, ValueError) as e:
+            with open(private_key_file) as pkf:
+                private_key = serialization.load_pem_private_key(
+                    pkf.read().encode('utf-8'),
+                    password=None,
+                    backend=backends.default_backend())
+        except (IOError, UnsupportedAlgorithm, ValueError) as e:
             self.logger.error('Error reading private key %s'
-                              '' % self.args.priv_key_to_sign)
+                              '' % private_key_file)
             self.logger.exception(e)
             return
-        pubkey_filename = '.'.join((self.args.priv_key_to_sign, 'pub'))
+
+        public_key_file = '.'.join((private_key_file, 'pub'))
         try:
-            with open(pubkey_filename) as pub_key_file:
-                pub_key = pub_key_file.read()
+            with open(public_key_file) as pkf:
+                pub_key = pkf.read()
         except IOError:
             self.logger.error('Public key file %s not found. '
                               'Public key is generated from private one.'
-                              '' % pubkey_filename)
-            pub_key = private_key.publickey().exportKey('OpenSSH')
-        data_hash = SHA256.new()
-        data_hash.update('signature'.encode('utf-8'))
-        signer = PKCS1_v1_5.new(private_key)
-        signature = binascii.b2a_hex(signer.sign(data_hash))
+                              '' % public_key_file)
+            pub_key = private_key.public_key().public_bytes(
+                serialization.Encoding.OpenSSH,
+                serialization.PublicFormat.OpenSSH)
+
+        signer = private_key.signer(padding.PKCS1v15(), hashes.SHA256())
+        signer.update('signature'.encode('utf-8'))
+        signature = binascii.b2a_hex(signer.finalize())
         return pub_key, signature
 
     def self_sign(self):
