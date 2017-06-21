@@ -165,7 +165,8 @@ class TestTestListParser(unittest.TestCase):
         # ID list.
         with open(test_file, 'rb') as f:
             file_contents = f.read()
-        testcase_list = filter(None, file_contents.split('\n'))
+        testcase_list = list(filter(None,
+                                    file_contents.decode('utf-8').split('\n')))
 
         self.assertEqual(test_ids, testcase_list)
 

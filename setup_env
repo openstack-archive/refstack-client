@@ -2,6 +2,7 @@
 
 #Default Tempest commit: SHA 8f98c4b60bf06a8c15e8c054848d2440c46077d0 (February 17, 2017 tags 15.0.0)
 CHECKOUT_POINT=8f98c4b60bf06a8c15e8c054848d2440c46077d0
+PY_VERSION="2.7.8"
 
 # Prints help
 function usage {
@@ -13,6 +14,7 @@ function usage {
     echo "  -h  Print this usage message"
     echo "  -c  Tempest test runner commit. You can specify SHA or branch here"
     echo "      If no commit or tag is specified, tempest will be install from commit"
+    echo "  -p  [ 2 | 3 ] - Uses either python 2.7 or 3.5. Default to python 2.7"
     echo "  -q  Run quietly. If .tempest folder exists, refstack-client is considered as installed"
     echo "  -t  Tempest test runner tag. You can specify tag here"
     echo "      ${CHECKOUT_POINT}"
@@ -30,10 +32,15 @@ function check_tag {
 
 # By default tempest uses commit ${CHECKOUT_POINT}
 
-while getopts c:t:qh FLAG; do
+while getopts c:p:t:qh FLAG; do
     case ${FLAG} in
         c)
             CHECKOUT_POINT=${OPTARG}
+            ;;
+        p)
+            if [ ${OPTARG} == '3' ]; then
+                PY_VERSION="3.5.2"
+            fi
             ;;
         t)
             CHECKOUT_POINT="-q ${OPTARG}"
@@ -110,10 +117,10 @@ cd ${WORKDIR}
 # Setup binary requirements
 if [ -n "$(command -v apt-get)" ]; then
     # For apt-get-based Linux distributions (Ubuntu, Debian)
-    sudo apt-get -y install curl wget tar unzip python-dev build-essential libssl-dev libxslt-dev libsasl2-dev libffi-dev libbz2-dev libyaml-dev
+    sudo apt-get -y install curl wget tar unzip python-dev build-essential libssl-dev libxslt-dev libsasl2-dev libffi-dev libbz2-dev libyaml-dev python3-dev
 elif [ -n "$(command -v yum)" ]; then
     # For yum-based distributions (RHEL, Centos)
-    sudo yum -y install curl wget tar unzip make python-devel.x86_64 gcc gcc-c++ libffi-devel libxml2-devel bzip2-devel libxslt-devel openssl-devel libyaml-devel
+    sudo yum -y install curl wget tar unzip make python-devel.x86_64 gcc gcc-c++ libffi-devel libxml2-devel bzip2-devel libxslt-devel openssl-devel libyaml-devel python3-devel 
 elif [ -n "$(command) -v zypper" ]; then
     # For zypper-based distributions (openSuSe, SELS)
     sudo zypper --non-interactive install curl wget tar unzip make python-devel.x86_64 gcc gcc-c++ libffi-devel libxml2-devel zlib-devel libxslt-devel libopenssl-devel python-xml libyaml-devel
@@ -123,9 +130,9 @@ else
 fi
 
 # Build local python interpreter if needed
-if [ ! -n "$(command -v python2.7)" ]; then
-    PY_VERSION="2.7.8"
-    echo "python2.7 not found. Building python ${PY_VERSION}..."
+sub_pystr="python$(echo $PY_VERSION | cut -c 1-3)"
+if [ ! -n "$(command -v $sub_pystr)" ]; then
+    echo "$sub_pystr not found. Building python ${PY_VERSION}..."
     mkdir ${WORKDIR}/.localpython
     mkdir ${WORKDIR}/.python_src
     cd ${WORKDIR}/.python_src
@@ -133,14 +140,14 @@ if [ ! -n "$(command -v python2.7)" ]; then
     tar zxvf Python-${PY_VERSION}.tgz
     cd Python-${PY_VERSION}
 
-    ./configure --prefix=${WORKDIR}/.localpython
+    ./configure --prefix=${WORKDIR}/.localpython --without-pymalloc
     make && make install
     cd ${WORKDIR}
     rm -rf ${WORKDIR}/.python_src
-    PYPATH="${WORKDIR}/.localpython/bin/python"
+    PYPATH="${WORKDIR}/.localpython/bin/$sub_pystr"
 else
-echo "python2.7 found!"
-PYPATH="python2.7"
+    echo "$sub_pystr found!"
+    PYPATH="$sub_pystr"
 fi
 
 # Setup virtual environments for refstack-client and tempest

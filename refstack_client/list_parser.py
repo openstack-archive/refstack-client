@@ -150,7 +150,7 @@ class TestListParser(object):
         """
         temp = tempfile.NamedTemporaryFile(delete=False)
         for test_id in test_ids:
-            temp.write("%s\n" % test_id)
+            temp.write(("%s\n" % test_id).encode('utf-8'))
         temp.flush()
 
         # Register the created file for cleanup.

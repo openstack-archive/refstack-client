@@ -24,9 +24,10 @@ Tempest configuration file.
 
 """
 
+from __future__ import absolute_import
+
 import argparse
 import binascii
-import ConfigParser
 import hashlib
 import itertools
 import json
@@ -43,10 +44,10 @@ from cryptography.hazmat.primitives.asymmetric import padding
 
 import requests
 import requests.exceptions
-import six.moves
+from six import moves
 from six.moves.urllib import parse
-from subunit_processor import SubunitProcessor
-from list_parser import TestListParser
+from refstack_client.subunit_processor import SubunitProcessor
+from refstack_client.list_parser import TestListParser
 import yaml
 
 
@@ -54,7 +55,7 @@ def get_input():
     """
     Wrapper for raw_input. Necessary for testing.
     """
-    return raw_input().lower()  # pragma: no cover
+    return moves.input().lower()  # pragma: no cover
 
 
 def read_accounts_yaml(path):
@@ -83,7 +84,7 @@ class RefstackClient:
         # set default log level to INFO.
         if self.args.silent:
             self.logger.setLevel(logging.WARNING)
-        elif self.args.verbose > 0:
+        elif self.args.verbose:
             self.logger.setLevel(logging.DEBUG)
         else:
             self.logger.setLevel(logging.INFO)
@@ -113,7 +114,9 @@ class RefstackClient:
             exit(1)
 
         self.conf_file = self.args.conf_file
-        self.conf = ConfigParser.SafeConfigParser()
+        # Note: SafeConfigParser deprecated on Python 3.2
+        # Use ConfigParser directly
+        self.conf = moves.configparser.ConfigParser()
         self.conf.read(self.args.conf_file)
 
     def _prep_upload(self):
@@ -150,10 +153,10 @@ class RefstackClient:
             # Prefer Keystone V3 API if it is enabled
             auth_version = (
                 'v3' if (conf_file.has_option('identity-feature-enabled',
-                                              'api_v3')
-                         and conf_file.getboolean('identity-feature-enabled',
-                                                  'api_v3')
-                         and conf_file.has_option('identity', 'uri_v3'))
+                                              'api_v3') and
+                         conf_file.getboolean('identity-feature-enabled',
+                                              'api_v3') and
+                         conf_file.has_option('identity', 'uri_v3'))
                 else 'v2')
             if auth_version == 'v2':
                 auth_url = '%s/tokens' % (conf_file.get('identity', 'uri')
@@ -217,7 +220,7 @@ class RefstackClient:
                                   'configuration guide (http://docs.openstack.'
                                   'org/developer/tempest/configuration.html).')
                 exit(1)
-        except ConfigParser.Error as e:
+        except moves.configparser.Error as e:
             # Most likely a missing section or option in the config file.
             self.logger.error("Invalid Config File: %s" % e)
             exit(1)
@@ -246,12 +249,15 @@ class RefstackClient:
                 }
             return auth_version, auth_url, data
         elif auth_version == 'v3':
-            identity = {'methods': ['password'], 'password':
-                        {'user': {'name': auth_config['username'],
-                         'domain': {
-                             'name': auth_config['domain_name']
-                         },
-                        'password': auth_config['password']}}}
+            identity = {
+                'methods': ['password'],
+                'password': {
+                    'user': {
+                        'name': auth_config['username'],
+                        'domain': {'name': auth_config['domain_name']},
+                        'password': auth_config['password']
+                    }}}
+
             data = {
                 'auth': {
                     'identity': identity,
@@ -297,7 +303,7 @@ class RefstackClient:
                 message = ('Invalid request with error '
                            'code: %s. Error message: %s'
                            '' % (rsp['error']['code'],
-                           rsp['error']['message']))
+                                 rsp['error']['message']))
                 raise requests.exceptions.HTTPError(message)
             # If a Key or Index Error was raised, one of the expected keys or
             # indices for retrieving the identity service ID was not found.
@@ -321,7 +327,7 @@ class RefstackClient:
             raise ValueError('Invalid Keystone endpoint format. Make sure '
                              'the endpoint (%s) includes the URL scheme '
                              '(i.e. http/https).' % endpoint)
-        return hashlib.md5(url_parts.hostname).hexdigest()
+        return hashlib.md5(url_parts.hostname.encode('utf-8')).hexdigest()
 
     def _form_result_content(self, cpid, duration, results):
         '''This method will create the content for the request. The spec at
@@ -345,7 +351,7 @@ class RefstackClient:
         if self.args.quiet:
             return True
         try:
-            inp = six.moves.input(q + ' (yes/y): ')
+            inp = moves.input(q + ' (yes/y): ')
         except KeyboardInterrupt:
             return
         else:
@@ -403,7 +409,7 @@ class RefstackClient:
 
         if response.status_code == 201:
             resp = response.json()
-            print 'Test results uploaded!\nURL: %s' % resp.get('url', '')
+            print('Test results uploaded!\nURL: %s' % resp.get('url', ''))
 
     def test(self):
         '''Execute Tempest test against the cloud.'''
@@ -566,7 +572,7 @@ class RefstackClient:
             for r in page_of_results:
                 print('%s - %s' % (r['created_at'], r['url']))
             try:
-                six.moves.input('Press Enter to go to next page...')
+                moves.input('Press Enter to go to next page...')
             except KeyboardInterrupt:
                 return
 
