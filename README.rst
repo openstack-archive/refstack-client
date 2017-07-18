@@ -46,7 +46,7 @@ Usage
 
    Note: Use Tempest Pre-Provisioned credentials_ to provide user test accounts. ::
 
-.. _credentials: http://docs.openstack.org/developer/tempest/configuration.html#pre-provisioned-credentials
+.. _credentials: https://docs.openstack.org/tempest/latest/configuration.html#pre-provisioned-credentials
 
 2. Go into the refstack-client directory::
 
