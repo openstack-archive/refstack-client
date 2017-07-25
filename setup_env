@@ -157,7 +157,7 @@ python virtualenv.py ${TEMPEST_DIR}/.venv --python="${PYPATH}"
 cd ..
 rm -rf virtualenv-${VENV_VERSION}
 rm virtualenv-${VENV_VERSION}.tar.gz
-${WORKDIR}/.venv/bin/python -m pip install -r ${WORKDIR}/requirements.txt
+${WORKDIR}/.venv/bin/python -m pip install -e .
 ${TEMPEST_DIR}/.venv/bin/python -m pip install -r ${TEMPEST_DIR}/requirements.txt
 
 # Add additional packages to find more tests by tempest
