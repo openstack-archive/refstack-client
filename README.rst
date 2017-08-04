@@ -127,7 +127,20 @@ Usage
    signature can be found at
    https://github.com/openstack/refstack/blob/master/doc/source/uploading_private_results.rst
 
-7. List uploaded test set.
+7. Create a JSON web token to use for authentication to your privately
+   uploaded data
+
+   In order to authenticate to the refstack-server to which you have uploaded
+   your data, you will need to generate a JSON webtoken. To generate a valid
+   token, use the command::
+
+       jwt --key="$( cat %path to private key% )" --alg=RS256 user_openid=%openstackid% exp=+100500
+
+   To test authentication in the API, use the command::
+
+       curl -k --header "Authorization: Bearer %token%" https://localhost.org/v1/profile
+
+8. List uploaded test set.
 
    You can list previously uploaded data from a RefStack API server by using
    the following command::
