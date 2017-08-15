@@ -25,7 +25,7 @@ import mock
 from mock import MagicMock
 import unittest
 
-import refstack_client.refstack_client as rc
+from refstack_client import refstack_client as rc
 
 
 class TestRefstackClient(unittest.TestCase):
@@ -356,11 +356,13 @@ class TestRefstackClient(unittest.TestCase):
             client._get_cpid_from_keystone(auth_version, auth_url, content)
             client._generate_cpid_from_endpoint.assert_called_with(auth_url)
 
-        #Test when catalog has other non-identity services.
-        ks3_other_services = {'token': {'catalog': [{'type': 'compute',
-                                        'id': 'test-id1'},
-                                        {'type': 'identity',
-                                         'id': 'test-id2'}]}}
+        # Test when catalog has other non-identity services.
+        ks3_other_services = {'token': {
+                              'catalog': [{'type': 'compute',
+                                           'id': 'test-id1'},
+                                          {'type': 'identity',
+                                           'id': 'test-id2'}]
+                              }}
         client._generate_cpid_from_endpoint = MagicMock()
 
         @httmock.all_requests
@@ -413,7 +415,7 @@ class TestRefstackClient(unittest.TestCase):
         args = rc.parse_cli_args(self.mock_argv())
         client = rc.RefstackClient(args)
         cpid = client._generate_cpid_from_endpoint('http://some.url:5000/v2')
-        expected = hashlib.md5('some.url').hexdigest()
+        expected = hashlib.md5('some.url'.encode('utf-8')).hexdigest()
         self.assertEqual(expected, cpid)
 
         with self.assertRaises(ValueError):
@@ -539,11 +541,11 @@ class TestRefstackClient(unittest.TestCase):
             return expected_response
 
         with httmock.HTTMock(refstack_api_mock):
-            client.post_results("http://127.0.0.1", content,
-                                sign_with=self.test_path + '/rsa_key')
+            rsapath = os.path.join(self.test_path, 'rsa_key')
+            client.post_results("http://127.0.0.1", content, sign_with=rsapath)
             client.logger.info.assert_called_with(
-                'http://127.0.0.1/v1/results/ Response: '
-                '%s' % expected_response)
+                'http://127.0.0.1/v1/results/ Response: %s' %
+                expected_response)
 
     def test_run_tempest(self):
         """
@@ -766,8 +768,8 @@ class TestRefstackClient(unittest.TestCase):
         """
         upload_file_path = self.test_path + "/.testrepository/0.json"
         args = rc.parse_cli_args(
-            self.mock_argv(command='upload', priv_key='rsa_key')
-            + [upload_file_path])
+            self.mock_argv(command='upload', priv_key='rsa_key') +
+            [upload_file_path])
         client = rc.RefstackClient(args)
 
         client.post_results = MagicMock()
@@ -791,15 +793,15 @@ class TestRefstackClient(unittest.TestCase):
         """
         upload_file_path = self.test_path + "/.testrepository/0"
         args = rc.parse_cli_args(
-            self.mock_argv(command='upload-subunit', priv_key='rsa_key')
-            + ['--keystone-endpoint', 'http://0.0.0.0:5000/v2.0']
-            + [upload_file_path])
+            self.mock_argv(command='upload-subunit', priv_key='rsa_key') +
+            ['--keystone-endpoint', 'http://0.0.0.0:5000/v2.0'] +
+            [upload_file_path])
         client = rc.RefstackClient(args)
         client.post_results = MagicMock()
         client.upload_subunit()
         expected_json = {
             'duration_seconds': 0,
-            'cpid': hashlib.md5('0.0.0.0').hexdigest(),
+            'cpid': hashlib.md5('0.0.0.0'.encode('utf-8')).hexdigest(),
             'results': [
                 {'name': 'tempest.passed.test'},
                 {'name': 'tempest.tagged_passed.test',
@@ -860,13 +862,13 @@ class TestRefstackClient(unittest.TestCase):
         args = rc.parse_cli_args(self.mock_argv(command='list'))
         client = rc.RefstackClient(args)
         results = [[{"cpid": "42",
-                    "created_at": "2015-04-28 13:57:05",
-                    "test_id": "1",
-                    "url": "http://127.0.0.1:8000/output.html?test_id=1"},
-                   {"cpid": "42",
-                    "created_at": "2015-04-28 13:57:05",
-                    "test_id": "2",
-                    "url": "http://127.0.0.1:8000/output.html?test_id=2"}]]
+                     "created_at": "2015-04-28 13:57:05",
+                     "test_id": "1",
+                     "url": "http://127.0.0.1:8000/output.html?test_id=1"},
+                    {"cpid": "42",
+                     "created_at": "2015-04-28 13:57:05",
+                     "test_id": "2",
+                     "url": "http://127.0.0.1:8000/output.html?test_id=2"}]]
         mock_results = MagicMock()
         mock_results.__iter__.return_value = results
         client.yield_results = MagicMock(return_value=mock_results)
@@ -882,8 +884,8 @@ class TestRefstackClient(unittest.TestCase):
                                   os.path.join(self.test_path, 'rsa_key')])
         client = rc.RefstackClient(args)
         pubkey, signature = client._sign_pubkey()
-        self.assertTrue(pubkey.startswith('ssh-rsa AAAA'))
-        self.assertTrue(signature.startswith('413cb954'))
+        self.assertTrue(pubkey.decode('utf8').startswith('ssh-rsa AAAA'))
+        self.assertTrue(signature.decode('utf8').startswith('413cb954'))
 
     def test_set_env_params(self):
         """

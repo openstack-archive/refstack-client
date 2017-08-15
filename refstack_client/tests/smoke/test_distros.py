@@ -56,5 +56,6 @@ class TestSequenceFunctions(unittest.TestCase):
         distro_image = 'opensuse/13.2'
         self.run_test(distro_image)
 
+
 if __name__ == '__main__':
     unittest.main()
