@@ -1,0 +1,11 @@
+Code-Review+1: megan guiney <meganmguiney@gmail.com>
+Code-Review+2: Catherine Diep <cdiep@us.ibm.com>
+Code-Review+1: Chris Hoge <chris@openstack.org>
+Code-Review+2: Paul Van Eck <pvaneck@us.ibm.com>
+Workflow+1: Paul Van Eck <pvaneck@us.ibm.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Tue, 15 Aug 2017 19:02:20 +0000
+Reviewed-on: https://review.openstack.org/483999
+Project: openstack/refstack-client
+Branch: refs/heads/master
