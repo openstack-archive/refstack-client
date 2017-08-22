@@ -1,0 +1,9 @@
+Code-Review+2: Paul Van Eck <pvaneck@us.ibm.com>
+Code-Review+2: megan guiney <meganmguiney@gmail.com>
+Workflow+1: megan guiney <meganmguiney@gmail.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Tue, 22 Aug 2017 19:49:08 +0000
+Reviewed-on: https://review.openstack.org/491936
+Project: openstack/refstack-client
+Branch: refs/heads/master
