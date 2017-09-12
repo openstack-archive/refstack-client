@@ -36,7 +36,7 @@ We've created an "easy button" for Ubuntu, Centos, RHEL and openSuSe.
    For example: execute ``./setup_env -t tags/3`` to install Tempest tag-3.
 
    c. By default, Tempest will be installed from commit
-   19e20abb9311dc3c786d32418966185085af6a3e (July 10, 2017 tags 16.1.0).
+   cc255bbbf431e114a4fc0ef587cd3d72333f750a (October, 2017).
 
 Usage
 #####
@@ -68,14 +68,13 @@ Usage
 
    To run only those tests specified in an OpenStack Powered (TM) Guideline::
 
-       refstack-client test -c <Path of the tempest configuration file to use> -v --test-list <Path or URL of test list>
+       refstack-client test -c <Path of the tempest configuration file to use> -v -–test-list <Absolute path  of test list>
 
    For example::
 
-       refstack-client test -c ~/tempest.conf -v --test-list \
-       "https://refstack.openstack.org/api/v1/guidelines/2017.01/tests?target=platform&type=required&alias=true&flag=false"
+       refstack-client test -c ~/tempest.conf -v --test-list "https://refstack.openstack.org/api/v1/guidelines/2017.09/tests?target=platform&type=required&alias=true&flag=false"
 
-   This will run only the test cases required by the 2017.01 guidelines
+   This will run only the test cases required by the 2017.09 guidelines
    that have not been flagged.
 
    **Note:**
@@ -92,9 +91,9 @@ Usage
    e. Adding the ``-r`` option with a string will prefix the JSON result file with the
       given string (e.g. ``-r my-test`` will yield a result file like
       'my-test-0.json').
-   f. Adding ``--`` enables you to pass arbitrary arguments to the ostestr runner.
+   f. Adding ``--`` enables you to pass arbitrary arguments to tempest run.
       After the first ``--``, all other subsequent arguments will be passed to
-      the ostestr runner as is. This is mainly used for quick verification of the
+      tempest run as is. This is mainly used for quick verification of the
       target test cases. (e.g. ``-- --regex tempest.api.identity.v2.test_token``)
 
    Use ``refstack-client test --help`` for the full list of arguments.
@@ -158,7 +157,7 @@ switching to that directory and using the installed dependencies.
 
 1. ``cd .tempest``
 2. ``source ./.venv/bin/activate``
-   and run tests manually with ``ostestr``.
+   and run tests manually with ``tempest run``.
 
 This will make the entire Tempest environment available for you to run,
-including the ``ostestr`` and ``testr`` commands.
+including ``tempest run``.

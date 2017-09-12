@@ -570,8 +570,8 @@ class TestRefstackClient(unittest.TestCase):
         client.test()
 
         mock_popen.assert_called_with(
-            ['%s/tools/with_venv.sh' % self.test_path, 'ostestr',
-             '--serial', '--no-slowest', '--regex', 'tempest.api.compute'],
+            ['%s/tools/with_venv.sh' % self.test_path, 'tempest', 'run',
+             '--serial', '--regex', 'tempest.api.compute'],
             stderr=None
         )
 
@@ -601,8 +601,8 @@ class TestRefstackClient(unittest.TestCase):
         client._get_cpid_from_keystone = MagicMock()
         client.test()
         mock_popen.assert_called_with(
-            ['%s/tools/with_venv.sh' % self.test_path, 'ostestr',
-             '--serial', '--no-slowest', '--regex', 'tempest.api.compute'],
+            ['%s/tools/with_venv.sh' % self.test_path, 'tempest', 'run',
+             '--serial', '--regex', 'tempest.api.compute'],
             stderr=None
         )
 
@@ -634,8 +634,8 @@ class TestRefstackClient(unittest.TestCase):
             return_value='test-id')
         client.test()
         mock_popen.assert_called_with(
-            ['%s/tools/with_venv.sh' % self.test_path, 'ostestr',
-             '--serial', '--no-slowest', '--regex', 'tempest.api.compute'],
+            ['%s/tools/with_venv.sh' % self.test_path, 'tempest', 'run',
+             '--serial', '--regex', 'tempest.api.compute'],
             stderr=None
         )
 
@@ -675,8 +675,8 @@ class TestRefstackClient(unittest.TestCase):
 
         mock_whitelist.assert_called_with('test-list.txt')
         mock_popen.assert_called_with(
-            ['%s/tools/with_venv.sh' % self.test_path, 'ostestr', '--serial',
-             '--no-slowest', '--whitelist_file', '/tmp/some-list'],
+            ['%s/tools/with_venv.sh' % self.test_path, 'tempest', 'run',
+             '--serial', '--whitelist_file', '/tmp/some-list'],
             stderr=None
         )
 
@@ -735,8 +735,8 @@ class TestRefstackClient(unittest.TestCase):
         client.test()
 
         mock_popen.assert_called_with(
-            ['%s/tools/with_venv.sh' % self.test_path, 'ostestr',
-             '--serial', '--no-slowest', '--regex', 'tempest.api.compute'],
+            ['%s/tools/with_venv.sh' % self.test_path, 'tempest', 'run',
+             '--serial', '--regex', 'tempest.api.compute'],
             stderr=None
         )
         # Since '1' is in the next-stream file, we expect the JSON output file
