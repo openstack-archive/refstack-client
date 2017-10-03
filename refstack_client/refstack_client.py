@@ -147,23 +147,20 @@ class RefstackClient:
         return os.path.join(tempest_dir, '.testrepository', subunit_file)
 
     def _get_keystone_config(self, conf_file):
-        '''This will get and return the keystone configs
-        from config file.'''
+        '''This will get and return the keystone configs from config file.'''
         try:
             # Prefer Keystone V3 API if it is enabled
-            auth_version = (
-                'v3' if (conf_file.has_option('identity-feature-enabled',
-                                              'api_v3') and
-                         conf_file.getboolean('identity-feature-enabled',
-                                              'api_v3') and
-                         conf_file.has_option('identity', 'uri_v3'))
-                else 'v2')
+            auth_version = 'v3'
+            if conf_file.has_option('identity', 'auth_version'):
+                auth_version = conf_file.get('identity', 'auth_version')
+
             if auth_version == 'v2':
                 auth_url = '%s/tokens' % (conf_file.get('identity', 'uri')
                                           .rstrip('/'))
             elif auth_version == 'v3':
                 auth_url = '%s/auth/tokens' % (conf_file.get('identity',
                                                'uri_v3').rstrip('/'))
+
             domain_name = 'Default'
             if conf_file.has_option('identity', 'domain_name'):
                 domain_name = conf_file.get('identity', 'domain_name')
