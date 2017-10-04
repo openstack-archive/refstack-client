@@ -95,6 +95,8 @@ Usage
       After the first ``--``, all other subsequent arguments will be passed to
       tempest run as is. This is mainly used for quick verification of the
       target test cases. (e.g. ``-- --regex tempest.api.identity.v2.test_token``)
+   g. If you have provisioned multiple user/project accounts you can run parallel
+      test execution by enabling the ``--parallel`` flag.
 
    Use ``refstack-client test --help`` for the full list of arguments.
 

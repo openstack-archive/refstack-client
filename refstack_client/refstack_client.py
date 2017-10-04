@@ -423,9 +423,11 @@ class RefstackClient:
 
         # Run the tempest run command, conf file specified at _prep_test method
         # Use virtual environment (wrapper script)
-        # telling it to run the tests serially (--serial).
+        # Run the tests serially if parallel not enabled (--serial).
         wrapper = os.path.join(self.tempest_dir, 'tools', 'with_venv.sh')
-        cmd = [wrapper, 'tempest', 'run', '--serial']
+        cmd = [wrapper, 'tempest', 'run']
+        if not self.args.parallel:
+            cmd.append('--serial')
         # If a test list was specified, have it take precedence.
         if self.args.test_list:
             self.logger.info("Normalizing test list...")
@@ -743,6 +745,13 @@ def parse_cli_args(args=None):
                              help='After running Tempest, upload the test '
                                   'results to the default RefStack API server '
                                   'or the server specified by --url.')
+
+    parser_test.add_argument('-p', '--parallel',
+                             action='store_true',
+                             required=False,
+                             help='Run the tests in parallel. Note this '
+                                  'requires multiple users/projects in '
+                                  'accounts.yaml.')
 
     # This positional argument will allow arbitrary arguments to be passed in
     # with the usage of '--'.
