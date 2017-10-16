@@ -1,7 +1,7 @@
 #!/bin/bash -x
 
-#Default Tempest commit: SHA 19e20abb9311dc3c786d32418966185085af6a3e (July 10, 2017 tags 16.1.0)
-CHECKOUT_POINT=19e20abb9311dc3c786d32418966185085af6a3e
+#Default Tempest commit: SHA cc255bbbf431e114a4fc0ef587cd3d72333f750a (October 2017)
+CHECKOUT_POINT=cc255bbbf431e114a4fc0ef587cd3d72333f750a
 PY_VERSION="2.7.8"
 
 # Prints help
@@ -165,7 +165,7 @@ cd ..
 rm -rf virtualenv-${VENV_VERSION}
 rm virtualenv-${VENV_VERSION}.tar.gz
 ${WORKDIR}/.venv/bin/python -m pip install -e .
-${TEMPEST_DIR}/.venv/bin/python -m pip install -r ${TEMPEST_DIR}/requirements.txt
+${TEMPEST_DIR}/.venv/bin/python -m pip install ${TEMPEST_DIR}
 
 # Add additional packages to find more tests by tempest
 # Note: Since there are no requirements in tempest-additional-requirements.txt by default,

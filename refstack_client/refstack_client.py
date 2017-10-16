@@ -421,11 +421,11 @@ class RefstackClient:
         self.logger.info("Starting Tempest test...")
         start_time = time.time()
 
-        # Run the ostestr command, conf file specified at _prep_test method
+        # Run the tempest run command, conf file specified at _prep_test method
         # Use virtual environment (wrapper script)
         # telling it to run the tests serially (--serial).
         wrapper = os.path.join(self.tempest_dir, 'tools', 'with_venv.sh')
-        cmd = [wrapper, 'ostestr', '--serial', '--no-slowest']
+        cmd = [wrapper, 'tempest', 'run', '--serial']
         # If a test list was specified, have it take precedence.
         if self.args.test_list:
             self.logger.info("Normalizing test list...")
@@ -446,7 +446,7 @@ class RefstackClient:
                 self.logger.error("Error normalizing passed in test list.")
                 exit(1)
         elif 'arbitrary_args' in self.args:
-            # Additional arguments for ostestr runner
+            # Additional arguments for tempest run
             # otherwise run  all Tempest API tests.
             # keep usage(-- testCaseName)
             tmp = self.args.arbitrary_args[1:]
@@ -463,14 +463,14 @@ class RefstackClient:
             # results to stderr.
             stderr = open(os.devnull, 'w')
 
-        # Execute the ostestr command in a subprocess.
+        # Execute the tempest run command in a subprocess.
         os.chdir(self.tempest_dir)
         process = subprocess.Popen(cmd, stderr=stderr)
         process.communicate()
         os.chdir(self.refstack_dir)
 
         # If the subunit file was created, then test cases were executed via
-        # ostestr and there is test output to process.
+        # tempest run and there is test output to process.
         if os.path.isfile(results_file):
             end_time = time.time()
             elapsed = end_time - start_time
@@ -500,12 +500,12 @@ class RefstackClient:
                 self.post_results(self.args.url, content,
                                   sign_with=self.args.priv_key)
         else:
-            msg1 = ("ostestr command did not generate a results file under "
-                    "the Refstack .tempest/.testrepository directory."
-                    "Review command and try again.")
-            msg2 = ("Problem executing ostestr command. Results file not "
-                    "generated hence no file to upload. "
-                    "Review arbitrary arguments.")
+            msg1 = ("tempest run command did not generate a results file "
+                    "under the Refstack .tempest/.testrepository "
+                    "directory. Review command and try again.")
+            msg2 = ("Problem executing tempest run command. Results file "
+                    "not generated hence no file to upload. Review "
+                    "arbitrary arguments.")
             if process.returncode != 0:
                 self.logger.warning(msg1)
             if self.args.upload:
@@ -749,10 +749,11 @@ def parse_cli_args(args=None):
     parser_test.add_argument('arbitrary_args',
                              nargs=argparse.REMAINDER,
                              help='After the first "--", you can pass '
-                                  'arbitrary arguments to the ostestr runner. '
-                                  'This can be used for running specific test '
-                                  'cases or test lists. Some examples are: '
-                                  '-- --regex tempest.api.compute.images.'
+                                  'arbitrary arguments to the tempest run '
+                                  'runner. This can be used for running '
+                                  'specific test cases or test lists. '
+                                  'Some examples are: -- --regex '
+                                  'tempest.api.compute.images.'
                                   'test_list_image_filters OR '
                                   '-- --whitelist_file /tmp/testid-list.txt')
     parser_test.set_defaults(func="test")
