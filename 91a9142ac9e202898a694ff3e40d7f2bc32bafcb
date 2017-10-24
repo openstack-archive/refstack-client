@@ -1,0 +1,8 @@
+Code-Review+2: Luz Cazares <luz.cazares@intel.com>
+Workflow+1: Chris Hoge <chris@openstack.org>
+Verified+2: Zuul
+Submitted-by: Zuul
+Submitted-at: Tue, 24 Oct 2017 17:05:37 +0000
+Reviewed-on: https://review.openstack.org/509934
+Project: openstack/refstack-client
+Branch: refs/heads/master
