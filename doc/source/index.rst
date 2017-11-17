@@ -1,20 +1,28 @@
+===========================================
 Welcome to refstack-client's documentation!
 ===========================================
 
-Contents:
------------
+---------------------
+About refstack-client
+---------------------
 
 .. toctree::
-   :maxdepth: 4
-   :glob:
+   :maxdepth: 2
 
    readme
 
-   specs/newton/approved/*
+-----------------
+Approved Features
+-----------------
 
-   specs/newton/implemented/*
+.. toctree::
+   :titlesonly:
+   :glob:
 
+   specs/*/approved/*
+
+------------------
 Indices and tables
-==================
+------------------
 
 * :ref:`search`

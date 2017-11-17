@@ -1,7 +1,6 @@
-======================================================================
-Refstack-client implementation of Defcore waiver regarding additional
-properties on Nova API response
-======================================================================
+=============================================================
+Defcore waiver for additional properties on Nova API response
+=============================================================
 
 Launchpad blueprint: https://blueprints.launchpad.net/refstack/+spec/refstack-waiver
 
