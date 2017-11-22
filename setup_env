@@ -93,7 +93,7 @@ elif [ -n "$(command -v yum)" ]; then
         yum -y install sudo
     fi
     sudo yum -y install git
-elif [ -n "$(command) -v zypper" ]; then
+elif [ -n "$(command -v zypper)" ]; then
     # For zypper-based distributions (openSuSe, SELS)
     # If we run script in container we need sudo
     if [ ! -f sudo ]; then
@@ -121,7 +121,7 @@ if [ -n "$(command -v apt-get)" ]; then
 elif [ -n "$(command -v yum)" ]; then
     # For yum-based distributions (RHEL, Centos)
     sudo yum -y install curl wget tar unzip make python-devel.x86_64 gcc gcc-c++ libffi-devel libxml2-devel bzip2-devel libxslt-devel openssl-devel libyaml-devel python3-devel 
-elif [ -n "$(command) -v zypper" ]; then
+elif [ -n "$(command -v zypper)" ]; then
     # For zypper-based distributions (openSuSe, SELS)
     sudo zypper --non-interactive install curl wget tar unzip make python-devel.x86_64 gcc gcc-c++ libffi-devel libxml2-devel zlib-devel libxslt-devel libopenssl-devel python-xml libyaml-devel
 else
