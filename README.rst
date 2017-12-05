@@ -42,7 +42,10 @@ Usage
 #####
 
 1. Prepare a tempest configuration file that is customized to your cloud
-   environment.
+   environment. Samples of minimal Tempest configurations are provided in
+   the ``etc`` directory in ``tempest.conf.sample`` and ``accounts.yaml.sample``.
+   Note that these samples will likely need changes or additional information
+   to work with your cloud.
 
    Note: Use Tempest Pre-Provisioned credentials_ to provide user test accounts. ::
 

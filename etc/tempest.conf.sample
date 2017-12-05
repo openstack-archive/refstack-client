@@ -1,0 +1,51 @@
+# This is a minimal example of what your tempest.conf file
+# can look like. You will need to supply your own values
+# and possibly add additional configurations for your cloud
+# You can use this as a starting point for configuring
+# tempest for the refstack client.
+
+[auth]
+test_accounts_file = $ACCOUNTS_YAML
+use_dynamic_credentials = false
+
+[compute]
+image_ref = $IMAGE_REF_1
+image_ref_alt = $IMAGE_REF_2
+flavor_ref = $FLAVOR_REF_1
+flavor_ref_alt = $FLAVOR_REF_2
+fixed_network_name = $FIXED_NETWORK_NAME
+
+[compute-feature-enabled]
+resize = true
+
+[identity]
+uri_v3 = $KEYSTONE_V3_ENDPOINT
+auth_version = v3
+
+[identity-feature-enabled]
+api_v2 = false
+api_v3 = true
+
+[network]
+public_network_id = $PUBLIC_NETWORK_ID
+floating_network_name = $FLOATING_NETWORK_ID
+
+[object-storage]
+operator_role = SwiftOperator
+reseller_admin_role = ResellerAdmin
+
+[oslo_concurrency]
+lock_path = /tmp/tempest
+
+[service_available]
+cinder = true
+neutron = true
+glance = true
+swift = true
+nova = true
+heat = false
+
+[validation]
+run_validation = true
+connect_method = floating
+auth_method = keypair

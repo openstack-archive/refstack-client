@@ -1,0 +1,8 @@
+# A minimal accounts.yaml file
+# Will likely not work with swift, since additional
+# roles are required. For more documentation see:
+# https://git.openstack.org/cgit/openstack/tempest/tree/etc/accounts.yaml.sample
+
+- username: '$USERNAME'
+  project_name: '$PROJECTNAME'
+  password: '$PASSWORD'
