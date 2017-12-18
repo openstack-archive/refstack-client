@@ -132,6 +132,7 @@ installation.
 Use tests_list as withelist for ostestr in order to re-run failed test cases.
 
 .. code-block:: bash
+
    ostestr --serial -w test_list
 
 Input: test_list and conf-file files.

@@ -17,11 +17,12 @@ about tempest, the tempest.conf can be created automatically by the
 refstack-client and provide an example tempest.conf populated with values from
 the target cloud.
 
-::
+.. code-block:: bash
+
     $ source openstackrc file
     $ refstack-client config -h
-        --os-cloud <name of the cloud> # Using specific cloud.yaml files
-        --use-test-accounts <Use accounts from accounts.yaml>
+          --os-cloud <name of the cloud> # Using specific cloud.yaml files
+          --use-test-accounts <Use accounts from accounts.yaml>
     $ # we can also use discover-tempest-config to generate tempest.conf
     $ discover-tempest-config --create
 

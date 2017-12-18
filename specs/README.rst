@@ -1,6 +1,6 @@
-=======================
+==============================
 Refstack-Client Specifications
-=======================
+==============================
 
 This folder is used to hold design specifications for additions
 to the refstack-client project. Reviews of the specs are done in gerrit, using a
