@@ -1,0 +1,8 @@
+Code-Review+2: Chris Hoge <chris@openstack.org>
+Workflow+1: megan guiney <meganmguiney@gmail.com>
+Verified+2: Zuul
+Submitted-by: Zuul
+Submitted-at: Tue, 02 Jan 2018 18:14:39 +0000
+Reviewed-on: https://review.openstack.org/528841
+Project: openstack/refstack-client
+Branch: refs/heads/master
