@@ -20,7 +20,7 @@ it can send the passed test data to a RefStack API server.
 Environment setup
 #################
 
-We've created an "easy button" for Ubuntu, Centos, RHEL and openSuSe.
+We've created an "easy button" for Ubuntu, Centos, RHEL and openSUSE.
 
 1. Make sure you have ``git`` installed
 2. Get the refstack client: ``git clone https://github.com/openstack/refstack-client``
