@@ -71,7 +71,7 @@ Usage
 
    To run only those tests specified in an OpenStack Powered (TM) Guideline::
 
-       refstack-client test -c <Path of the tempest configuration file to use> -v -–test-list <Absolute path  of test list>
+       refstack-client test -c <Path of the tempest configuration file to use> -v --test-list <Absolute path  of test list>
 
    For example::
 
