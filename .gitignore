@@ -3,6 +3,7 @@
 .tox
 *.egg-info/
 *.egg
+.eggs/
 .coverage
 cover/*
 .project
