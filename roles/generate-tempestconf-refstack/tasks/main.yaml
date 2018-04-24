@@ -1,0 +1,49 @@
+- block:
+  - name: Install refstack-client and python-tempestconf
+    shell: |
+        set -ex
+        export PATH=$PATH:/usr/local/sbin:/usr/sbin
+        ./setup_env
+    args:
+        chdir: "{{ refstack_client_src_relative_path }}"
+        executable: /bin/bash
+
+  - name: Print Tempest account file
+    shell: |
+        set -ex
+        cat /etc/openstack/accounts.yaml
+
+  - name: Generate tempest configuration file
+    shell: |
+        set -ex
+        export PATH=$PATH:/usr/local/sbin:/usr/sbin
+        source .venv/bin/activate
+        {{ source_credentials_commands }}
+        printenv
+        refstack-client config --use-test-accounts /etc/openstack/accounts.yaml \
+            --image http://download.cirros-cloud.net/0.3.5/cirros-0.3.5-x86_64-disk.img \
+            --out /tmp/tempest.conf
+    args:
+        chdir: "{{ refstack_client_src_relative_path }}"
+        executable: /bin/bash
+
+  - name: Print generated tempest.conf
+    shell: |
+        set -ex
+        cat /tmp/tempest.conf
+
+  - name: Run refstack-client tests
+    shell: |
+        set -ex
+        export PATH=$PATH:/usr/local/sbin:/usr/sbin
+        source .venv/bin/activate
+        printenv
+        refstack-client test -c /tmp/tempest.conf \
+            -v --test-list "https://refstack.openstack.org/api/v1/guidelines/2017.09/tests?target=platform&type=required&alias=true&flag=false"
+    args:
+        chdir: "{{ refstack_client_src_relative_path }}"
+        executable: /bin/bash
+
+  vars:
+    refstack_client_src_relative_path: "{{ zuul.projects['git.openstack.org/openstack/refstack-client'].src_dir }}"
+    tempestconf_src_relative_path: "{{ zuul.projects['git.openstack.org/openstack/python-tempestconf'].src_dir }}"

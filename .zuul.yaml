@@ -1,0 +1,36 @@
+- project:
+    check:
+      jobs:
+        - refstack-client-devstack-tempestconf
+        - openstack-tox-py35
+    gate:
+      jobs:
+        - refstack-client-devstack-tempestconf
+        - openstack-tox-py35
+
+- job:
+    name: refstack-client-devstack-tempestconf
+    parent: devstack
+    description: |
+      Refstack client job for testing python-tempestconf and RefStack Integration
+    required-projects:
+      - openstack/refstack-client
+      - openstack/tempest
+      - openstack-dev/devstack
+      - openstack/python-tempestconf
+    roles:
+      - zuul: openstack/python-tempestconf
+      - zuul: openstack/tempest
+      - zuul: openstack-dev/devstack
+      - zuul: openstack/refstack-client
+    run: playbooks/tempestconf-refstack-devstack.yaml
+    vars:
+      user: demo
+      cloud_user: devstack
+      test_demo: True
+      cloud_admin: devstack-admin
+    irrelevant-files:
+      - config_tempest/tests/.*$
+      - ^doc/.*$
+      - ^releasenotes/.*$
+      - ^.*\.rst$

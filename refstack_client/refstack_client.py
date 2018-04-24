@@ -42,6 +42,11 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import padding
 
+from config_tempest import main
+from config_tempest import constants as C
+from keystoneauth1 import exceptions as KE
+from openstack import exceptions as OSE
+
 import requests
 import requests.exceptions
 from six import moves
@@ -408,6 +413,74 @@ class RefstackClient:
             resp = response.json()
             print('Test results uploaded!\nURL: %s' % resp.get('url', ''))
 
+    def generate_tempest_config(self):
+        '''Generate tempest.conf for a deployed OpenStack Cloud.'''
+        self.logger.info("Generating tempest.conf")
+        start_time = time.time()
+
+        # Write tempest.conf in refstack_client folder
+        if not self.args.out:
+            config_path = os.path.join(self.refstack_dir, 'tempest.conf')
+        else:
+            config_path = self.args.out
+
+        # Generate Tempest configuration
+        try:
+            cloud_creds = main.get_cloud_creds(self.args)
+        except KE.MissingRequiredOptions as e:
+            self.logger.error("Credentials are not sourced - %s" % e)
+        except OSE.ConfigException:
+            self.logger.error("Named cloud %s was not found"
+                              % self.args.os_cloud)
+
+        # tempestconf arguments
+        kwargs = {'non_admin': True,
+                  'test_accounts': self.args.test_accounts,
+                  'image_path': self.args.image,
+                  'network_id': self.args.network_id,
+                  'out': config_path,
+                  'cloud_creds': cloud_creds}
+
+        # Look for extra overrides to be replaced in tempest.conf
+        # (TODO:chkumar246) volume-feature-enabled.api_v2=True is deprecated
+        # in ROCKY release, but it is required for interop tests and it is out
+        # of scope of python-tempestconf, adding it hardcoded here as a extra
+        # overrides.
+        cinder_overrides = "volume-feature-enabled.api_v2=True"
+        overrides_format = cinder_overrides.replace('=', ' ').split()
+        if self.args.overrides:
+            if cinder_overrides not in self.args.overrides:
+                overrides = self.args.overrides.replace('=', ' ').split(',')
+                extra_overrides = overrides.append(overrides_format)
+        else:
+            extra_overrides = overrides_format
+        kwargs.update({'overrides': main.parse_overrides(extra_overrides)})
+
+        # Generate accounts.yaml if accounts.file is not given
+        if not self.args.test_accounts:
+            account_file = os.path.join(self.refstack_dir, 'accounts.yaml')
+            kwargs.update({'create_accounts_file': account_file})
+            self.logger.info('Account file will be generated at %s.'
+                             % account_file)
+
+        # Generate tempest.conf
+        main.config_tempest(**kwargs)
+
+        if os.path.isfile(config_path):
+            end_time = time.time()
+            elapsed = end_time - start_time
+            duration = int(elapsed)
+            self.logger.info('Tempest Configuration successfully generated '
+                             'in %s second at %s' % (duration, config_path))
+        else:
+            try:
+                import config_tempest # noqa
+                self.logging.warning('There is an error in syntax, please '
+                                     'check $ refstack-client config -h')
+            except ImportError:
+                self.logger.warning('Please make sure python-tempestconf'
+                                    'python package is installed')
+
     def test(self):
         '''Execute Tempest test against the cloud.'''
         self._prep_test()
@@ -706,6 +779,62 @@ def parse_cli_args(args=None):
                                             'Provider ID.')
 
     parser_subunit_upload.set_defaults(func="upload_subunit")
+
+    # Config Command
+    parser_config = subparsers.add_parser(
+        'config', parents=[shared_args, network_args],
+        help='Generate tempest.conf for a cloud')
+
+    parser_config.add_argument('--use-test-accounts',
+                               action='store',
+                               required=False,
+                               dest='test_accounts',
+                               type=str,
+                               help='Path of the accounts.yaml file.')
+
+    parser_config.add_argument('--network-id',
+                               action='store',
+                               required=False,
+                               dest='network_id',
+                               help='The ID of an existing network in our '
+                                    'openstack instance with external '
+                                    'connectivity')
+
+    parser_config.add_argument('--image',
+                               action='store',
+                               required=False,
+                               dest='image',
+                               help='An image name chosen from `$ openstack '
+                                    'image list` or a filepath/URL of an '
+                                    'image to be uploaded to glance and set '
+                                    'as a reference to be used by tests. The '
+                                    'name of the image is the leaf name of '
+                                    'the path. Default is %s'
+                                    % C.DEFAULT_IMAGE)
+
+    parser_config.add_argument('--out',
+                               action='store',
+                               required=False,
+                               dest='out',
+                               help='File path to write tempest.conf')
+
+    parser_config.add_argument('--os-cloud',
+                               action='store',
+                               required=False,
+                               dest='os_cloud',
+                               help='Named cloud to connect to.')
+
+    parser_config.add_argument('--overrides',
+                               action='store',
+                               required=False,
+                               dest='overrides',
+                               help='Comma seperated values which needs to be'
+                                    'overridden in tempest.conf.'
+                                    'Example --overrides'
+                                    'compute.image_ref=<value>,'
+                                    'compute.flavor_ref=<value>')
+
+    parser_config.set_defaults(func='generate_tempest_config')
 
     # Test command
     parser_test = subparsers.add_parser(

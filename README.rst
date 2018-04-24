@@ -59,11 +59,24 @@ Usage
 
        source .venv/bin/activate
 
-4. Validate your setup by running a short test::
+4. Generate tempest.conf using refstack-client::
+
+       refstack-client config --use-test-accounts <path to account file>
+
+   The above command will create the tempest.conf in `etc` folder.
+
+   Note: If account file is not available, then:
+   * Source the keystonerc file containing cloud credentials and run::
+
+         refstack-client config
+
+     It will create accounts.yaml and temepst.conf file in `etc` folder.
+
+5. Validate your setup by running a short test::
 
        refstack-client test -c <Path of the tempest configuration file to use> -v -- --regex tempest.api.identity.v3.test_tokens.TokensV3Test.test_create_token
 
-5. Run tests.
+6. Run tests.
 
    To run the entire API test set::
 

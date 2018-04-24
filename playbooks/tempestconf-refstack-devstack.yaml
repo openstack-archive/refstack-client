@@ -1,0 +1,40 @@
+- hosts: all
+  roles:
+    - run-devstack
+
+- hosts: tempest
+  vars:
+    set_auth_url: "OS_AUTH_URL=$SERVICE_PROTOCOL://$SERVICE_HOST/identity/v3"
+    devstack_base_dir: "/opt/stack"
+    aditional_tempestconf_params: "auth.tempest_roles Member"
+  tasks:
+    - name: Setup Tempest Run Directory
+      include_role:
+        name: setup-tempest-run-dir
+    - name: Setup Tempest Data Directory
+      include_role:
+        name: setup-tempest-data-dir
+    - name: ACL devstack files
+      include_role:
+        name: acl-devstack-files
+    - name: Generate configuration file for Tempest as admin
+      include_role:
+        name: generate-tempestconf-file
+      vars:
+        output_path: "/etc/openstack/tempest_admin.conf"
+        source_credentials_commands: "export HOST_IP={{ ansible_default_ipv4.address }}; source {{ devstack_base_dir }}/devstack/openrc admin admin; {{ set_auth_url }}"
+        user: admin
+    - name: Generate accounts.yaml file for Demo
+      include_role:
+        name: generate-accounts-file
+      vars:
+        aditional_tempestconf_params: "auth.tempest_roles Member"
+        source_credentials_commands: "export HOST_IP={{ ansible_default_ipv4.address }}; source {{ devstack_base_dir }}/devstack/openrc admin admin; {{ set_auth_url }}"
+        accounts_file_destination: "/etc/openstack"
+        tempest_config_file: "/etc/openstack/tempest_admin.conf"
+    - name: Generate tempest.conf using refstack-client and run tempest tests
+      include_role:
+        name: generate-tempestconf-refstack
+      vars:
+        source_credentials_commands: "export HOST_IP={{ ansible_default_ipv4.address }}; source {{ devstack_base_dir }}/devstack/openrc {{ user }} {{ user }}; {{ set_auth_url }}"
+        user: demo

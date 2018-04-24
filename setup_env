@@ -62,7 +62,7 @@ done
 WORKDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 TEMPEST_DIR=${REFSTACK_CLIENT_TEMPEST_DIR:-${WORKDIR}/.tempest}
-
+TEMPESTCONF_DIR=${REFSTACK_CLIENT_TEMPEST_DIR:-${WORKDIR}/.tempestconf}
 # Checkout tempest on specified tag
 if [ -d "${TEMPEST_DIR}" ]; then
     [ ${QUIET_MODE} ] && echo 'Looks like RefStack client is already installed' && exit 0
@@ -108,7 +108,9 @@ else
     exit 1
 fi
 
-git clone https://github.com/openstack/tempest.git ${TEMPEST_DIR}
+git clone https://git.openstack.org/openstack/python-tempestconf.git ${TEMPESTCONF_DIR}
+
+git clone https://git.openstack.org/openstack/tempest.git ${TEMPEST_DIR}
 cd ${TEMPEST_DIR}
 
 git checkout $CHECKOUT_POINT || if [ $? -ne 0 ]; then exit 1; fi
@@ -165,6 +167,9 @@ cd ..
 rm -rf virtualenv-${VENV_VERSION}
 rm virtualenv-${VENV_VERSION}.tar.gz
 ${WORKDIR}/.venv/bin/python -m pip install -e .
+cd ${TEMPESTCONF_DIR}
+${WORKDIR}/.venv/bin/python -m pip install -e .
+cd ..
 ${TEMPEST_DIR}/.venv/bin/python -m pip install ${TEMPEST_DIR}
 
 # Add additional packages to find more tests by tempest

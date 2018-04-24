@@ -1,0 +1,3 @@
+cloud_user: "devstack"
+virtualenvs:
+    refstack_client: "~/.virtualenvs/.refstack_client"
