@@ -165,34 +165,6 @@ class TestListParser(object):
         if os.path.isfile(file_path):
             os.remove(file_path)
 
-    def setup_venv(self, log_level):
-        """If for some reason the virtualenv for Tempest has not been
-        set up, then install it. This is to ensure that 'testr list-tests'
-        works.
-
-        :param log_level: integer denoting the log level (e.g. logging.DEBUG)
-        """
-        if not os.path.isdir(os.path.join(self.tempest_dir, ".venv")):
-            self.logger.info("Installing Tempest virtualenv. This may take "
-                             "a while.")
-            cmd = ('python',
-                   os.path.join(self.tempest_dir, "tools/install_venv.py"))
-
-            # Only show installation messages if the logging level is DEBUG.
-            if log_level <= logging.DEBUG:
-                stdout = None
-            else:
-                stdout = open(os.devnull, 'w')
-
-            process = subprocess.Popen(cmd, cwd=self.tempest_dir,
-                                       stdout=stdout)
-            process.communicate()
-
-            if process.returncode != 0:
-                self.logger.error("Error installing Tempest virtualenv.")
-                raise subprocess.CalledProcessError(process.returncode,
-                                                    ' '.join(cmd))
-
     def get_normalized_test_list(self, list_location):
         """This will take in the user's test list and will normalize it
         so that the test cases in the list map to actual full test IDS in

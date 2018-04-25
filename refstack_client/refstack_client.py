@@ -421,7 +421,7 @@ class RefstackClient:
         self.logger.info("Starting Tempest test...")
         start_time = time.time()
 
-        # Run the tempest run command, conf file specified at _prep_test method
+        # Run tempest run command, conf file specified at _prep_test method
         # Use virtual environment (wrapper script)
         # Run the tests serially if parallel not enabled (--serial).
         wrapper = os.path.join(self.tempest_dir, 'tools', 'with_venv.sh')
@@ -433,7 +433,6 @@ class RefstackClient:
             self.logger.info("Normalizing test list...")
             parser = TestListParser(os.path.abspath(self.tempest_dir),
                                     insecure=self.args.insecure)
-            parser.setup_venv(self.logger.getEffectiveLevel())
             # get whitelist
             list_file = parser.create_whitelist(self.args.test_list)
             if list_file:

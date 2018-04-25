@@ -170,23 +170,6 @@ class TestTestListParser(unittest.TestCase):
 
         self.assertEqual(test_ids, testcase_list)
 
-    def test_setup_venv(self):
-        """Test whether the proper script is called to setup a virtualenv."""
-        process_mock = mock.Mock(returncode=0)
-        subprocess.Popen = mock.Mock(return_value=process_mock)
-        self.parser.setup_venv(logging.DEBUG)
-        subprocess.Popen.assert_called_with(
-            ("python", "%s/tools/install_venv.py" % self.tempest_dir),
-            cwd=self.tempest_dir,
-            stdout=None)
-
-    def test_setup_venv_fail(self):
-        """Test whether the proper script is called to setup a virtualenv."""
-        process_mock = mock.Mock(returncode=1)
-        subprocess.Popen = mock.Mock(return_value=process_mock)
-        with self.assertRaises(subprocess.CalledProcessError):
-            self.parser.setup_venv(logging.DEBUG)
-
     @mock.patch.object(parser.TestListParser, "get_normalized_test_list")
     def test_create_whitelist(self, mock_get_normalized):
         """Test whether a test list is properly parsed to extract test names"""
