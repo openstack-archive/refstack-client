@@ -3,7 +3,7 @@
     shell: |
         set -ex
         export PATH=$PATH:/usr/local/sbin:/usr/sbin
-        ./setup_env
+        ./setup_env -c master
     args:
         chdir: "{{ refstack_client_src_relative_path }}"
         executable: /bin/bash
@@ -39,7 +39,7 @@
         source .venv/bin/activate
         printenv
         refstack-client test -c /tmp/tempest.conf \
-            -v --test-list "https://refstack.openstack.org/api/v1/guidelines/2017.09/tests?target=platform&type=required&alias=true&flag=false"
+            -v --test-list "https://refstack.openstack.org/api/v1/guidelines/2018.02/tests?target=platform&type=required&alias=true&flag=false"
     args:
         chdir: "{{ refstack_client_src_relative_path }}"
         executable: /bin/bash

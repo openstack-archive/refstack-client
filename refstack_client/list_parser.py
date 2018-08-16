@@ -41,12 +41,21 @@ class TestListParser(object):
         self.insecure = insecure
 
     def _get_tempest_test_ids(self):
-        """This does a 'testr list-tests' on the Tempest directory in order to
-        get a list of full test IDs for the current Tempest environment. Test
-        ID mappings are then formed for these tests.
+        """This does a 'testr list-tests' or 'stestr list' according to
+        Tempest version on the Tempest directory in order to get a list
+        of full test IDs for the current Tempest environment. Test ID
+        mappings are then formed for these tests.
         """
-        cmd = (os.path.join(self.tempest_dir, 'tools/with_venv.sh'),
-               'testr', 'list-tests')
+        if os.path.exists(os.path.join(self.tempest_dir, '.stestr.conf')):
+            init_cmd = (os.path.join(self.tempest_dir, 'tools/with_venv.sh'),
+                        'stestr', 'init')
+            subprocess.Popen(init_cmd, stdout=subprocess.PIPE,
+                             cwd=self.tempest_dir)
+            cmd = (os.path.join(self.tempest_dir, 'tools/with_venv.sh'),
+                   'stestr', 'list')
+        else:
+            cmd = (os.path.join(self.tempest_dir, 'tools/with_venv.sh'),
+                   'testr', 'list-tests')
         process = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                                    cwd=self.tempest_dir)
         (stdout, stderr) = process.communicate()
