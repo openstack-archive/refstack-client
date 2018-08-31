@@ -4,11 +4,13 @@
       - openstack-python35-jobs
     check:
       jobs:
-        - refstack-client-devstack-tempestconf
+        - refstack-client-devstack-tempestconf:
+            voting: false
         - openstack-tox-py35
     gate:
       jobs:
-        - refstack-client-devstack-tempestconf
+        - refstack-client-devstack-tempestconf:
+            voting: false
         - openstack-tox-py35
 
     post:
