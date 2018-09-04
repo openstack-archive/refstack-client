@@ -134,22 +134,26 @@ class RefstackClient:
 
     def _get_next_stream_subunit_output_file(self, tempest_dir):
         '''This method reads from the next-stream file in the .testrepository
-           directory of the given Tempest path. The integer here is the name
-           of the file where subunit output will be saved to.'''
+           or .stestr directory according to Tempest version of the given
+           Tempest path. The integer here is the name of the file where subunit
+           output will be saved to.'''
+        if os.path.exists(os.path.join(self.tempest_dir, '.stestr.conf')):
+            sub_dir = '.stestr'
+        else:
+            sub_dir = '.testrepository'
         try:
             subunit_file = open(os.path.join(
-                                tempest_dir, '.testrepository',
+                                tempest_dir, sub_dir,
                                 'next-stream'), 'r').read().rstrip()
         except (IOError, OSError):
-            self.logger.debug('The .testrepository/next-stream file was not '
+            self.logger.debug('The ' + sub_dir + '/next-stream file was not '
                               'found. Assuming subunit results will be stored '
                               'in file 0.')
 
-            # Testr saves the first test stream to .testrepository/0 when
-            # there is a newly generated .testrepository directory.
+            # First test stream is saved into $sub_dir/0
             subunit_file = "0"
 
-        return os.path.join(tempest_dir, '.testrepository', subunit_file)
+        return os.path.join(tempest_dir, sub_dir, subunit_file)
 
     def _get_keystone_config(self, conf_file):
         '''This will get and return the keystone configs from config file.'''
@@ -575,7 +579,7 @@ class RefstackClient:
                                   sign_with=self.args.priv_key)
         else:
             msg1 = ("tempest run command did not generate a results file "
-                    "under the Refstack .tempest/.testrepository "
+                    "under the Refstack os.path.dirname(results_file) "
                     "directory. Review command and try again.")
             msg2 = ("Problem executing tempest run command. Results file "
                     "not generated hence no file to upload. Review "

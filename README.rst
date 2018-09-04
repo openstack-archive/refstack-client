@@ -36,7 +36,7 @@ We've created an "easy button" for Ubuntu, Centos, RHEL and openSUSE.
    For example: execute ``./setup_env -t tags/3`` to install Tempest tag-3.
 
    c. By default, Tempest will be installed from commit
-   cc255bbbf431e114a4fc0ef587cd3d72333f750a (October, 2017).
+   8316f962c52b01edc5be466b18e54904e2a1248a (Sept, 2018).
 
 Usage
 #####
@@ -88,9 +88,9 @@ Usage
 
    For example::
 
-       refstack-client test -c ~/tempest.conf -v --test-list "https://refstack.openstack.org/api/v1/guidelines/2017.09/tests?target=platform&type=required&alias=true&flag=false"
+       refstack-client test -c ~/tempest.conf -v --test-list "https://refstack.openstack.org/api/v1/guidelines/2018.02/tests?target=platform&type=required&alias=true&flag=false"
 
-   This will run only the test cases required by the 2017.09 guidelines
+   This will run only the test cases required by the 2018.02 guidelines
    that have not been flagged.
 
    **Note:**
