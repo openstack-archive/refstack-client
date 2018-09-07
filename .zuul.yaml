@@ -13,9 +13,6 @@
             voting: false
         - openstack-tox-py35
 
-    post:
-      jobs:
-        - openstack-tox-cover
 - job:
     name: refstack-client-devstack-tempestconf
     parent: devstack
