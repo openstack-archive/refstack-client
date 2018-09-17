@@ -11,4 +11,7 @@ cover/*
 build
 .tempest/
 .venv/
+etc/
+.tempestconf
+tempest.log
 
