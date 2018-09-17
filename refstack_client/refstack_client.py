@@ -468,14 +468,15 @@ class RefstackClient:
         # of scope of python-tempestconf, adding it hardcoded here as a extra
         # overrides.
         cinder_overrides = "volume-feature-enabled.api_v2=True"
-        overrides_format = cinder_overrides.replace('=', ' ').split()
+        overrides_format = cinder_overrides.replace('=', ',').split(',')
+        overrides = []
         if self.args.overrides:
+            overrides = self.args.overrides.replace('=', ',').split(',')
             if cinder_overrides not in self.args.overrides:
-                overrides = self.args.overrides.replace('=', ' ').split(',')
-                extra_overrides = overrides.append(overrides_format)
+                overrides = overrides + overrides_format
         else:
-            extra_overrides = overrides_format
-        kwargs.update({'overrides': main.parse_overrides(extra_overrides)})
+            overrides = overrides_format
+        kwargs.update({'overrides': main.parse_overrides(overrides)})
 
         # Generate accounts.yaml if accounts.file is not given
         if not self.args.test_accounts:
@@ -825,6 +826,7 @@ def parse_cli_args(args=None):
                                action='store',
                                required=False,
                                dest='image',
+                               default=C.DEFAULT_IMAGE,
                                help='An image name chosen from `$ openstack '
                                     'image list` or a filepath/URL of an '
                                     'image to be uploaded to glance and set '
