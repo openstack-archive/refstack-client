@@ -136,12 +136,22 @@ class RefstackClient:
         '''This method reads from the next-stream file in the .testrepository
            or .stestr directory according to Tempest version of the given
            Tempest path. The integer here is the name of the file where subunit
-           output will be saved to.'''
+           output will be saved to. It also check if the repository is
+           initialized and if not, initialize it'''
         if os.path.exists(os.path.join(self.tempest_dir, '.stestr.conf')):
             sub_dir = '.stestr'
+            cmd = 'stestr'
         else:
             sub_dir = '.testrepository'
+            cmd = 'testr'
         try:
+            if not os.path.exists(os.path.join(tempest_dir, sub_dir)):
+                self.logger.debug('No repository found, creating one.')
+                os.chdir(tempest_dir)
+                process = subprocess.Popen([cmd, 'init'])
+                process.communicate()
+                os.chdir(self.refstack_dir)
+
             subunit_file = open(os.path.join(
                                 tempest_dir, sub_dir,
                                 'next-stream'), 'r').read().rstrip()
@@ -189,13 +199,16 @@ class RefstackClient:
                 account = accounts[0]
                 username = account.get('username')
                 password = account.get('password')
-                tenant_id = account.get('tenant_id')
-                tenant_name = account.get('tenant_name')
+                project_id = (account.get('tenant_id') or
+                              account.get('project_id'))
+                project_name = (account.get('tenant_name') or
+                                account.get('project_name'))
                 return {'auth_version': auth_version,
                         'auth_url': auth_url,
                         'domain_name': domain_name,
                         'username': username, 'password': password,
-                        'tenant_id': tenant_id, 'tenant_name': tenant_name
+                        'tenant_id': project_id, 'tenant_name': project_name,
+                        'project_id': project_id, 'project_name': project_name
                         }
             elif conf_file.has_option('identity', 'username'):
                 self.logger.warn('Using identity section of tempest config '
@@ -210,15 +223,19 @@ class RefstackClient:
                 password = conf_file.get('identity', 'password')
 
                 if self.conf.has_option('identity', 'tenant_id'):
-                    tenant_id = conf_file.get('identity', 'tenant_id')
+                    project_id = conf_file.get('identity', 'tenant_id')
+                elif self.conf.has_option('identity', 'project_id'):
+                    project_id = conf_file.get('identity', 'project_id')
                 else:
-                    tenant_id = None
-                tenant_name = conf_file.get('identity', 'tenant_name')
+                    project_id = None
+                project_name = (conf_file.get('identity', 'tenant_name') or
+                                conf_file.get('identity', 'project_name'))
                 return {'auth_version': auth_version,
                         'auth_url': auth_url,
                         'domain_name': domain_name,
                         'username': username, 'password': password,
-                        'tenant_id': tenant_id, 'tenant_name': tenant_name}
+                        'tenant_id': project_id, 'tenant_name': project_name,
+                        'project_id': project_id, 'project_name': project_name}
             else:
                 self.logger.error('User credentials cannot be found. '
                                   'User credentials should be defined in the '

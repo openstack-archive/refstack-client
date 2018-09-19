@@ -78,8 +78,10 @@ class TestRefstackClient(unittest.TestCase):
                           'auth_version': 'v2',
                           'domain_name': 'Default',
                           'password': 'test',
-                          'tenant_id': 'admin_tenant_id',
-                          'tenant_name': 'tenant_name',
+                          'tenant_id': 'admin_project_id',
+                          'project_id': 'admin_project_id',
+                          'tenant_name': 'project_name',
+                          'project_name': 'project_name',
                           'username': 'admin'}
 
     def setUp(self):
@@ -222,8 +224,8 @@ class TestRefstackClient(unittest.TestCase):
         accounts = [
             {
                 'username': 'admin',
-                'tenant_name': 'tenant_name',
-                'tenant_id': 'admin_tenant_id',
+                'project_name': 'project_name',
+                'project_id': 'admin_project_id',
                 'password': 'test'
             }
         ]
