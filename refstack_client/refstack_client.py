@@ -419,14 +419,14 @@ class RefstackClient:
 
     def generate_tempest_config(self):
         '''Generate tempest.conf for a deployed OpenStack Cloud.'''
-        self.logger.info("Generating tempest.conf")
         start_time = time.time()
 
-        # Write tempest.conf in refstack_client folder
+        # Write tempest.conf in refstack_client/etc folder
         if not self.args.out:
-            config_path = os.path.join(self.refstack_dir, 'tempest.conf')
+            config_path = os.path.join(self.refstack_dir, 'etc/tempest.conf')
         else:
             config_path = self.args.out
+        self.logger.info("Generating in %s" % config_path)
 
         # Generate Tempest configuration
         try:
@@ -462,7 +462,7 @@ class RefstackClient:
 
         # Generate accounts.yaml if accounts.file is not given
         if not self.args.test_accounts:
-            account_file = os.path.join(self.refstack_dir, 'accounts.yaml')
+            account_file = os.path.join(self.refstack_dir, 'etc/accounts.yaml')
             kwargs.update({'create_accounts_file': account_file})
             self.logger.info('Account file will be generated at %s.'
                              % account_file)
