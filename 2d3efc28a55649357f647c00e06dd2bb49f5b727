@@ -1,0 +1,9 @@
+Code-Review+1: Martin Kopec <mkopec@redhat.com>
+Code-Review+2: Chris Hoge <chris@openstack.org>
+Workflow+1: Chris Hoge <chris@openstack.org>
+Verified+2: Zuul
+Submitted-by: Zuul
+Submitted-at: Fri, 12 Oct 2018 17:36:45 +0000
+Reviewed-on: https://review.openstack.org/603616
+Project: openstack/refstack-client
+Branch: refs/heads/master
