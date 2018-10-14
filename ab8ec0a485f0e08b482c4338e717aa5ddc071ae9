@@ -1,0 +1,9 @@
+Code-Review+1: Chandan Kumar <chkumar@redhat.com>
+Code-Review+2: Chris Hoge <chris@openstack.org>
+Workflow+1: Chris Hoge <chris@openstack.org>
+Verified+2: Zuul
+Submitted-by: Zuul
+Submitted-at: Sun, 14 Oct 2018 23:22:58 +0000
+Reviewed-on: https://review.openstack.org/603159
+Project: openstack/refstack-client
+Branch: refs/heads/master
