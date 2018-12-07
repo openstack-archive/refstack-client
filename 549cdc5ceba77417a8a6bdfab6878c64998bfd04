@@ -1,0 +1,10 @@
+Code-Review+1: Arx Cruz <arxcruz@redhat.com>
+Code-Review+1: Luigi Toscano <ltoscano@redhat.com>
+Code-Review+2: Chris Hoge <chris@openstack.org>
+Workflow+1: Chris Hoge <chris@openstack.org>
+Verified+2: Zuul
+Submitted-by: Zuul
+Submitted-at: Fri, 07 Dec 2018 16:44:05 +0000
+Reviewed-on: https://review.openstack.org/618974
+Project: openstack/refstack-client
+Branch: refs/heads/master
