@@ -16,6 +16,7 @@ function usage {
     echo "      If no commit or tag is specified, tempest will be install from commit"
     echo "  -p  [ 2 | 3 ] - Uses either python 2.7 or 3.5. Default to python 2.7"
     echo "  -q  Run quietly. If .tempest folder exists, refstack-client is considered as installed"
+    echo "  -s  Use python-tempestconf from the given source (path), used when running f.e. in Zuul"
     echo "  -t  Tempest test runner tag. You can specify tag here"
     echo "      ${CHECKOUT_POINT}"
     exit 1
@@ -32,7 +33,7 @@ function check_tag {
 
 # By default tempest uses commit ${CHECKOUT_POINT}
 
-while getopts c:p:t:qh FLAG; do
+while getopts c:p:t:qs:h FLAG; do
     case ${FLAG} in
         c)
             CHECKOUT_POINT=${OPTARG}
@@ -48,6 +49,9 @@ while getopts c:p:t:qh FLAG; do
         q)  #show help
             QUIET_MODE=true
             ;;
+        s)  #show help
+            TEMPESTCONF_SOURCE=${OPTARG}
+            ;;
         h)  #show help
             usage
             ;;
@@ -62,7 +66,12 @@ done
 WORKDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 TEMPEST_DIR=${REFSTACK_CLIENT_TEMPEST_DIR:-${WORKDIR}/.tempest}
-TEMPESTCONF_DIR=${REFSTACK_CLIENT_TEMPEST_DIR:-${WORKDIR}/.tempestconf}
+if [ -z ${TEMPESTCONF_SOURCE} ]; then
+    TEMPESTCONF_DIR=${REFSTACK_CLIENT_TEMPEST_DIR:-${WORKDIR}/.tempestconf}
+else
+    TEMPESTCONF_DIR=${TEMPESTCONF_SOURCE}
+fi
+
 # Checkout tempest on specified tag
 if [ -d "${TEMPEST_DIR}" ]; then
     [ ${QUIET_MODE} ] && echo 'Looks like RefStack client is already installed' && exit 0
@@ -108,7 +117,9 @@ else
     exit 1
 fi
 
-git clone https://git.openstack.org/openstack/python-tempestconf.git ${TEMPESTCONF_DIR}
+if [ -z ${TEMPESTCONF_SOURCE} ]; then
+    git clone https://git.openstack.org/openstack/python-tempestconf.git ${TEMPESTCONF_DIR}
+fi
 
 git clone https://git.openstack.org/openstack/tempest.git ${TEMPEST_DIR}
 cd ${TEMPEST_DIR}
@@ -122,7 +133,7 @@ if [ -n "$(command -v apt-get)" ]; then
     sudo apt-get -y install curl wget tar unzip python-dev build-essential libssl-dev libxslt-dev libsasl2-dev libffi-dev libbz2-dev libyaml-dev python3-dev
 elif [ -n "$(command -v yum)" ]; then
     # For yum-based distributions (RHEL, Centos)
-    sudo yum -y install curl wget tar unzip make python-devel.x86_64 gcc gcc-c++ libffi-devel libxml2-devel bzip2-devel libxslt-devel openssl-devel libyaml-devel python3-devel 
+    sudo yum -y install curl wget tar unzip make python-devel.x86_64 gcc gcc-c++ libffi-devel libxml2-devel bzip2-devel libxslt-devel openssl-devel libyaml-devel python3-devel
 elif [ -n "$(command -v zypper)" ]; then
     # For zypper-based distributions (openSUSE, SELS)
     sudo zypper --non-interactive install curl wget tar unzip make python-devel.x86_64 gcc gcc-c++ libffi-devel libxml2-devel zlib-devel libxslt-devel libopenssl-devel python-xml libyaml-devel

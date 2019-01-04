@@ -1,9 +1,12 @@
 - block:
+  # python-tempestconf's source code is placed by zuul at the same level
+  # as refstack-client's code, so when the task changes dir to
+  # refstack-client's folder, python-tempestconf is located one folder above
   - name: Install refstack-client and python-tempestconf
     shell: |
         set -ex
         export PATH=$PATH:/usr/local/sbin:/usr/sbin
-        ./setup_env -c master
+        ./setup_env -c master -s ../python-tempestconf
     args:
         chdir: "{{ refstack_client_src_relative_path }}"
         executable: /bin/bash
@@ -46,4 +49,3 @@
 
   vars:
     refstack_client_src_relative_path: "{{ zuul.projects['git.openstack.org/openstack/refstack-client'].src_dir }}"
-    tempestconf_src_relative_path: "{{ zuul.projects['git.openstack.org/openstack/python-tempestconf'].src_dir }}"
