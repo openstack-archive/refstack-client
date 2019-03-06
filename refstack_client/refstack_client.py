@@ -523,6 +523,13 @@ class RefstackClient:
         cmd = [wrapper, 'tempest', 'run']
         if not self.args.parallel:
             cmd.append('--serial')
+        # TODO(mkopec) until refstack-client uses tempest tag which contains
+        # the following change https://review.openstack.org/#/c/641349/
+        # let's hardcode concurrency here, when the change is merged, the
+        # value of concurrency will be set as default in tempest so the
+        # following two lines can be deleted
+        cmd.append('--concurrency')
+        cmd.append('0')
         # If a test list was specified, have it take precedence.
         if self.args.test_list:
             self.logger.info("Normalizing test list...")

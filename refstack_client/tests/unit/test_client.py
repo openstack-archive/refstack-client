@@ -573,7 +573,8 @@ class TestRefstackClient(unittest.TestCase):
 
         mock_popen.assert_called_with(
             ['%s/tools/with_venv.sh' % self.test_path, 'tempest', 'run',
-             '--serial', '--regex', 'tempest.api.compute'],
+             '--serial', '--concurrency', '0', '--regex',
+             'tempest.api.compute'],
             stderr=None
         )
 
@@ -604,7 +605,8 @@ class TestRefstackClient(unittest.TestCase):
         client.test()
         mock_popen.assert_called_with(
             ['%s/tools/with_venv.sh' % self.test_path, 'tempest', 'run',
-             '--serial', '--regex', 'tempest.api.compute'],
+             '--serial', '--concurrency', '0', '--regex',
+             'tempest.api.compute'],
             stderr=None
         )
 
@@ -637,7 +639,8 @@ class TestRefstackClient(unittest.TestCase):
         client.test()
         mock_popen.assert_called_with(
             ['%s/tools/with_venv.sh' % self.test_path, 'tempest', 'run',
-             '--serial', '--regex', 'tempest.api.compute'],
+             '--serial', '--concurrency', '0', '--regex',
+             'tempest.api.compute'],
             stderr=None
         )
 
@@ -678,7 +681,8 @@ class TestRefstackClient(unittest.TestCase):
         mock_whitelist.assert_called_with('test-list.txt')
         mock_popen.assert_called_with(
             ['%s/tools/with_venv.sh' % self.test_path, 'tempest', 'run',
-             '--serial', '--whitelist_file', '/tmp/some-list'],
+             '--serial', '--concurrency', '0', '--whitelist_file',
+             '/tmp/some-list'],
             stderr=None
         )
 
@@ -738,7 +742,8 @@ class TestRefstackClient(unittest.TestCase):
 
         mock_popen.assert_called_with(
             ['%s/tools/with_venv.sh' % self.test_path, 'tempest', 'run',
-             '--serial', '--regex', 'tempest.api.compute'],
+             '--serial', '--concurrency', '0', '--regex',
+             'tempest.api.compute'],
             stderr=None
         )
         # Since '1' is in the next-stream file, we expect the JSON output file
