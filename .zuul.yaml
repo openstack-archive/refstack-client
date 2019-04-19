@@ -20,12 +20,12 @@
     required-projects:
       - openstack/refstack-client
       - openstack/tempest
-      - openstack-dev/devstack
+      - openstack/devstack
       - openstack/python-tempestconf
     roles:
       - zuul: openstack/python-tempestconf
       - zuul: openstack/tempest
-      - zuul: openstack-dev/devstack
+      - zuul: openstack/devstack
       - zuul: openstack/refstack-client
     run: playbooks/tempestconf-refstack-devstack.yaml
     vars:

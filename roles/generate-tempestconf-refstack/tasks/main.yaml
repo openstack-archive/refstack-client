@@ -48,4 +48,4 @@
         executable: /bin/bash
 
   vars:
-    refstack_client_src_relative_path: "{{ zuul.projects['git.openstack.org/openstack/refstack-client'].src_dir }}"
+    refstack_client_src_relative_path: "{{ zuul.projects['opendev.org/openstack/refstack-client'].src_dir }}"
