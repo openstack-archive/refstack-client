@@ -6,7 +6,7 @@
     shell: |
         set -ex
         export PATH=$PATH:/usr/local/sbin:/usr/sbin
-        ./setup_env -c master -s ../python-tempestconf
+        ./setup_env -c master -s ../python-tempestconf {{ python_3_args | default('') }}
     args:
         chdir: "{{ refstack_client_src_relative_path }}"
         executable: /bin/bash

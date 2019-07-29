@@ -3,17 +3,18 @@
       - openstack-python-jobs
       - openstack-python35-jobs
       - openstack-python36-jobs
+      - openstack-python37-jobs
     check:
       jobs:
         - refstack-client-devstack-tempestconf
-        - openstack-tox-py35
+        - refstack-client-devstack-tempestconf-py3
     gate:
       jobs:
         - refstack-client-devstack-tempestconf
-        - openstack-tox-py35
+        - refstack-client-devstack-tempestconf-py3
 
 - job:
-    name: refstack-client-devstack-tempestconf
+    name: refstack-client-devstack-tempestconf-base
     parent: devstack
     description: |
       Refstack client job for testing python-tempestconf and RefStack Integration
@@ -38,3 +39,21 @@
       - ^doc/.*$
       - ^releasenotes/.*$
       - ^.*\.rst$
+
+- job:
+    name: refstack-client-devstack-tempestconf
+    parent: refstack-client-devstack-tempestconf-base
+    description: |
+      Refstack client job for testing python-tempestconf and RefStack Integration
+      using python2.
+
+- job:
+    name: refstack-client-devstack-tempestconf-py3
+    parent: refstack-client-devstack-tempestconf-base
+    description: |
+      Refstack client job for testing python-tempestconf and RefStack Integration
+      using python3.
+    vars:
+      python_3_args: -p 3
+      devstack_localrc:
+        USE_PYTHON3: true

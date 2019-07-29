@@ -861,7 +861,10 @@ class TestRefstackClient(unittest.TestCase):
         with httmock.HTTMock(refstack_api_mock):
             results = client.yield_results("http://127.0.0.1")
             self.assertEqual(expected_response['results'], next(results))
-            self.assertRaises(StopIteration, next, results)
+            # Since Python3.7 StopIteration exceptions are transformed into
+            # RuntimeError (PEP 479):
+            # https://docs.python.org/3/whatsnew/3.7.html
+            self.assertRaises((StopIteration, RuntimeError), next, results)
 
     @mock.patch('six.moves.input', side_effect=KeyboardInterrupt)
     @mock.patch('sys.stdout', new_callable=MagicMock)

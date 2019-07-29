@@ -6,7 +6,7 @@
   vars:
     set_auth_url: "OS_AUTH_URL=$SERVICE_PROTOCOL://$SERVICE_HOST/identity/v3"
     devstack_base_dir: "/opt/stack"
-    aditional_tempestconf_params: "auth.tempest_roles Member"
+    aditional_tempestconf_params: "auth.tempest_roles Member object-storage.operator_role Member"
   tasks:
     - name: Setup Tempest Run Directory
       include_role:
@@ -28,7 +28,6 @@
       include_role:
         name: generate-accounts-file
       vars:
-        aditional_tempestconf_params: "auth.tempest_roles Member"
         source_credentials_commands: "export HOST_IP={{ ansible_default_ipv4.address }}; source {{ devstack_base_dir }}/devstack/openrc admin admin; {{ set_auth_url }}"
         accounts_file_destination: "/etc/openstack"
         tempest_config_file: "/etc/openstack/tempest_admin.conf"

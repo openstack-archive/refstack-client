@@ -65,9 +65,10 @@ class TestListParser(object):
             self.logger.error(stderr)
             raise subprocess.CalledProcessError(process.returncode,
                                                 ' '.join(cmd))
-
-        testcase_list = stdout.split('\n')
-        return self._form_test_id_mappings(testcase_list)
+        try:
+            return self._form_test_id_mappings(stdout.split('\n'))
+        except TypeError:
+            return self._form_test_id_mappings(stdout.decode().split('\n'))
 
     def _form_test_id_mappings(self, test_list):
         """This takes in a list of full test IDs and forms a dict containing
