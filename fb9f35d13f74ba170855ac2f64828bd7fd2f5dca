@@ -1,0 +1,11 @@
+Code-Review+1: Arx Cruz <arxcruz@redhat.com>
+Code-Review+2: Luigi Toscano <ltoscano@redhat.com>
+Code-Review+2: Chandan Kumar (raukadah) <chkumar@redhat.com>
+Code-Review+2: Thierry Carrez <thierry@openstack.org>
+Workflow+1: Thierry Carrez <thierry@openstack.org>
+Verified+2: Zuul
+Submitted-by: Zuul
+Submitted-at: Mon, 16 Sep 2019 10:11:59 +0000
+Reviewed-on: https://review.opendev.org/673222
+Project: openstack/refstack-client
+Branch: refs/heads/master
