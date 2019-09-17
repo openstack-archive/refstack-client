@@ -1,0 +1,10 @@
+Code-Review+2: Chris Hoge <chris@hogepodge.com>
+Code-Review+1: Vieri <15050873171@163.com>
+Code-Review+2: Thierry Carrez <thierry@openstack.org>
+Workflow+1: Thierry Carrez <thierry@openstack.org>
+Verified+2: Zuul
+Submitted-by: Zuul
+Submitted-at: Tue, 17 Sep 2019 13:02:58 +0000
+Reviewed-on: https://review.opendev.org/674679
+Project: openstack/refstack-client
+Branch: refs/heads/master
