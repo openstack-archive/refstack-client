@@ -175,8 +175,16 @@ cd virtualenv-${VENV_VERSION}
 if [ -d ${WORKDIR}/.venv ]; then
     rm -rf ${WORKDIR}/.venv
 fi
-python virtualenv.py ${WORKDIR}/.venv --python="${PYPATH}"
-python virtualenv.py ${TEMPEST_DIR}/.venv --python="${PYPATH}"
+
+# Determine python which will run virtualenv.py script
+if [ -n "$(command -v python3)" ]; then
+    python='python3'
+else
+    python='python'
+fi
+$python virtualenv.py ${WORKDIR}/.venv --python="${PYPATH}"
+$python virtualenv.py ${TEMPEST_DIR}/.venv --python="${PYPATH}"
+
 cd ..
 rm -rf virtualenv-${VENV_VERSION}
 rm virtualenv-${VENV_VERSION}.tar.gz
