@@ -136,7 +136,13 @@ if [ -n "$(command -v apt-get)" ]; then
     sudo apt-get -y install curl wget tar unzip python-dev build-essential libssl-dev libxslt-dev libsasl2-dev libffi-dev libbz2-dev libyaml-dev python3-dev
 elif [ -n "$(command -v yum)" ]; then
     # For yum-based distributions (RHEL, Centos)
-    sudo yum -y install curl wget tar unzip make python-devel.x86_64 gcc gcc-c++ libffi-devel libxml2-devel bzip2-devel libxslt-devel openssl-devel libyaml-devel python3-devel
+    sudo yum -y install curl wget tar unzip make gcc gcc-c++ libffi-devel libxml2-devel bzip2-devel libxslt-devel openssl-devel
+    if [[ ${PY_VERSION::1} == "2" ]]; then
+        sudo yum -y install python-devel libyaml-devel
+    else
+        # python3 dependencies
+        sudo yum -y install python3-devel
+    fi
 elif [ -n "$(command -v zypper)" ]; then
     # For zypper-based distributions (openSUSE, SELS)
     sudo zypper --non-interactive install curl wget tar unzip make python-devel.x86_64 gcc gcc-c++ libffi-devel libxml2-devel zlib-devel libxslt-devel libopenssl-devel python-xml libyaml-devel
