@@ -2,7 +2,7 @@
 
 #Default Tempest commit: SHA 8316f962c52b01edc5be466b18e54904e2a1248a (Sept 2018)
 CHECKOUT_POINT=8316f962c52b01edc5be466b18e54904e2a1248a
-PY_VERSION="2.7.8"
+PY_VERSION="3.6.0"
 
 # Prints help
 function usage {
@@ -15,7 +15,7 @@ function usage {
     echo "  -c  Tempest test runner commit. You can specify SHA or branch here"
     echo "      If no commit or tag is specified, tempest will be install from commit"
     echo "  -p  [ 2 | 3 | X.X.X ] - Uses either python 2.7 (if -p 2), 3.6 (if -p 3)"
-    echo "      or given specific version (if -p X.X.X). Default to python 2.7"
+    echo "      or given specific version (if -p X.X.X). Default to python 3.6"
     echo "  -q  Run quietly. If .tempest folder exists, refstack-client is considered as installed"
     echo "  -s  Use python-tempestconf from the given source (path), used when running f.e. in Zuul"
     echo "  -t  Tempest test runner tag. You can specify tag here"
@@ -40,8 +40,8 @@ while getopts c:p:t:qs:h FLAG; do
             CHECKOUT_POINT=${OPTARG}
             ;;
         p)
-            if [ ${OPTARG} == '3' ]; then
-                PY_VERSION="3.6.0"
+            if [ ${OPTARG} == '2' ]; then
+                PY_VERSION="2.7.8"
             else
                 PY_VERSION=${OPTARG}
             fi
