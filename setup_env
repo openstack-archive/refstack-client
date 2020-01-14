@@ -173,7 +173,7 @@ else
 fi
 
 # Setup virtual environments for refstack-client and tempest
-VENV_VERSION='15.0.3'
+VENV_VERSION='16.7.9'
 wget https://github.com/pypa/virtualenv/archive/${VENV_VERSION}.tar.gz
 tar xvfz ${VENV_VERSION}.tar.gz
 rm ${VENV_VERSION}.tar.gz
