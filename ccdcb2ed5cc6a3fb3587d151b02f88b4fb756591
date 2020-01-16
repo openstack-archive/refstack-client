@@ -1,0 +1,9 @@
+Code-Review+1: Martin Kopec <mkopec@redhat.com>
+Code-Review+2: Luigi Toscano <ltoscano@redhat.com>
+Workflow+1: Chandan Kumar (raukadah) <chkumar@redhat.com>
+Verified+2: Zuul
+Submitted-by: Zuul
+Submitted-at: Thu, 16 Jan 2020 04:58:34 +0000
+Reviewed-on: https://review.opendev.org/702450
+Project: openstack/refstack-client
+Branch: refs/heads/master
