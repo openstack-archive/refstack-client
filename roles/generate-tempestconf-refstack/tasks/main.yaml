@@ -42,7 +42,7 @@
         source .venv/bin/activate
         printenv
         refstack-client test -c /tmp/tempest.conf \
-            -v --test-list "https://refstack.openstack.org/api/v1/guidelines/2019.06/tests?target=platform&type=required&alias=true&flag=false"
+            -v --test-list "https://refstack.openstack.org/api/v1/guidelines/2019.11/tests?target=platform&type=required&alias=true&flag=false"
     args:
         chdir: "{{ refstack_client_src_relative_path }}"
         executable: /bin/bash
